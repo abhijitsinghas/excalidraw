@@ -56,7 +56,6 @@
         padding-bottom: 0.5rem;
       }
 
-
       &-image {
         width: 100%;
         min-height: 200px;
@@ -64,7 +63,8 @@
         align-items: center;
         justify-content: center;
         margin-bottom: 0.5rem;
-        background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==") left center;
+        background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==")
+          left center;
         border: 1px solid var(--button-gray-2);
         border-radius: 8px;
         overflow: hidden;
