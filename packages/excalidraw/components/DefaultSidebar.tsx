@@ -10,16 +10,14 @@ import {
 
 import type { MarkOptional, Merge } from "@excalidraw/common/utility-types";
 
+import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
+
 import { useTunnels } from "../context/tunnels";
 import { useUIAppState } from "../context/ui-appState";
 
 import "../components/dropdownMenu/DropdownMenu.scss";
 
-import {
-  useExcalidrawSetAppState,
-  useApp,
-  useExcalidrawElements,
-} from "./App";
+import { useExcalidrawSetAppState, useApp, useExcalidrawElements } from "./App";
 import { LibraryMenu } from "./LibraryMenu";
 import { SearchMenu } from "./SearchMenu";
 import { PresentationMenu } from "./PresentationMenu";
@@ -29,7 +27,6 @@ import { LibraryIcon, searchIcon, presentationIcon } from "./icons";
 
 import type { SidebarProps, SidebarTriggerProps } from "./Sidebar/common";
 import type { AppClassProperties } from "../types";
-import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
 const DefaultSidebarTrigger = withInternalFallback(
   "DefaultSidebarTrigger",
@@ -103,9 +100,9 @@ export const DefaultSidebar = Object.assign(
             isForceDocked || onDock === false || (!onDock && docked != null)
               ? undefined
               : // compose to allow the host app to listen on default behavior
-              composeEventHandlers(onDock, (docked) => {
-                setAppState({ defaultSidebarDockedPreference: docked });
-              })
+                composeEventHandlers(onDock, (docked) => {
+                  setAppState({ defaultSidebarDockedPreference: docked });
+                })
           }
         >
           <Sidebar.Tabs>

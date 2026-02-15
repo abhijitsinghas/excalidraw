@@ -38,7 +38,12 @@ export const SVGLayer = ({ trails }: SVGLayerProps) => {
 
   return (
     <div className="SVGLayer">
-      <svg ref={svgRef} width="100%" height="100%" style={{ display: "block" }} />
+      <svg
+        ref={svgRef}
+        width="100%"
+        height="100%"
+        style={{ display: "block" }}
+      />
     </div>
   );
 };

@@ -26,8 +26,9 @@ export const AppSidebar = () => {
           <div
             className="app-sidebar-promo-image"
             style={{
-              ["--image-source" as any]: `url(/oss_promo_comments_${theme === THEME.DARK ? "dark" : "light"
-                }.jpg)`,
+              ["--image-source" as any]: `url(/oss_promo_comments_${
+                theme === THEME.DARK ? "dark" : "light"
+              }.jpg)`,
               opacity: 0.7,
             }}
           />
