@@ -28,16 +28,14 @@ import type {
 import { renderStaticScene } from "../renderer/staticScene";
 import { getDefaultAppState } from "../appState";
 import { Fonts } from "../fonts";
-import { t } from "../i18n";
 
-import { SVGLayer } from "./SVGLayer";
 import {
   chevronLeftIcon as ChevronLeftIcon,
   chevronRight as ChevronRightIcon,
-  PlayIcon,
   stop as StopIcon,
-  presentationIcon,
 } from "./icons";
+
+import "./PresentationMode.scss";
 
 import type { RenderableElementsMap } from "../scene/types";
 import type {
@@ -47,8 +45,6 @@ import type {
   ElementsPendingErasure,
   AppClassProperties,
 } from "../types";
-
-import "./PresentationMode.scss";
 
 interface PresentationModeProps {
   frames: readonly ExcalidrawFrameLikeElement[];
@@ -77,9 +73,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
   });
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [laserEnabled, setLaserEnabled] = useState(false);
-  const [layout, setLayout] = useState({ fitScale: 1, offsetX: 0, offsetY: 0 });
-
-  // Sort frames by presentationSlideOrder or position
+  const [, setLayout] = useState({ fitScale: 1, offsetX: 0, offsetY: 0 });
   const sortedFrames = useMemo(() => {
     if (appState.presentationSlideOrder) {
       const frameMap = new Map(frames.map((f) => [f.id, f]));
@@ -166,9 +160,6 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
       const canvas = canvasRef.current!;
       const screenWidth = dimensions.width;
       const screenHeight = dimensions.height;
-
-      const frameAspectRatio = currentFrame.width / currentFrame.height;
-      const screenAspectRatio = screenWidth / screenHeight;
 
       const scale = window.devicePixelRatio || 1;
       canvas.width = screenWidth * scale;

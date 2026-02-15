@@ -1,35 +1,18 @@
-import React, {
-  useMemo,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-} from "react";
+import React, { useMemo, useEffect, useState, useRef } from "react";
 
 import { isFrameLikeElement, getFrameLikeTitle } from "@excalidraw/element";
-
-import clsx from "clsx";
 
 import type {
   NonDeletedExcalidrawElement,
   ExcalidrawFrameLikeElement,
 } from "@excalidraw/element/types";
 
-import { t } from "../i18n";
 import { useUIAppState } from "../context/ui-appState";
 
 import { exportToCanvas } from "../scene/export";
 
 import { ToolButton } from "./ToolButton";
-import {
-  PlusIcon,
-  PlayIcon,
-  DraggableIcon,
-  TrashIcon,
-  presentationIcon,
-  DotsIcon,
-  ExportIcon,
-} from "./icons";
+import { PlusIcon, PlayIcon, DotsIcon, ExportIcon } from "./icons";
 
 import { useExcalidrawSetAppState } from "./App";
 

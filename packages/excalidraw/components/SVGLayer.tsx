@@ -15,14 +15,6 @@ export const SVGLayer = ({ trails }: SVGLayerProps) => {
 
   useEffect(() => {
     if (svgRef.current) {
-      // Debug: check SVG element properties
-      console.log("SVGLayer mounted, SVG element:", {
-        width: svgRef.current.getAttribute("width"),
-        height: svgRef.current.getAttribute("height"),
-        style: svgRef.current.style.cssText,
-        parent: svgRef.current.parentElement?.className,
-      });
-
       for (const trail of trailsRef.current) {
         trail.start(svgRef.current);
       }

@@ -27,7 +27,6 @@ import {
   useExcalidrawSetAppState,
   useExcalidrawActionManager,
   useExcalidrawElements,
-  useExcalidrawAppState,
   useAppProps,
   useApp,
 } from "../App";
@@ -555,7 +554,6 @@ Preferences.ToggleViewMode = PreferencesToggleViewModeItem;
 Preferences.ToggleElementProperties = PreferencesToggleElementPropertiesItem;
 
 export const ExportToFrame = () => {
-  const { t } = useI18n();
   const setAppState = useExcalidrawSetAppState();
 
   return (

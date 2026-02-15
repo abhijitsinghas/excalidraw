@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-import type { AppState, BinaryFiles, UIAppState } from "../types";
-
 import {
   getFrameLikeTitle,
   getNonDeletedElements,
@@ -24,6 +22,8 @@ import { TextField } from "./TextField";
 
 import "./ExportFrameDialog.scss";
 
+import type { AppState, BinaryFiles, UIAppState } from "../types";
+
 type ExportFrameDialogProps = {
   elements: readonly NonDeletedExcalidrawElement[];
   appState: UIAppState;
@@ -37,7 +37,7 @@ export const ExportFrameDialog = ({
   files,
   onCloseRequest,
 }: ExportFrameDialogProps) => {
-  const { t } = useI18n();
+  useI18n();
   const [framePreviews, setFramePreviews] = useState<
     { id: string; blob: Blob | null; name: string }[]
   >([]);
