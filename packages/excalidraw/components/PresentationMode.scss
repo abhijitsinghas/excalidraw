@@ -49,9 +49,7 @@
     pointer-events: none;
   }
 
-  &--laser-enabled {
-    cursor: crosshair;
-  }
+  // Cursor is now handled in React based on laserEnabled state
 
   // Floating Toolbar
   &__toolbar {
@@ -142,17 +140,16 @@
 
       &--exit {
         width: auto;
-        padding: 0 12px;
-        gap: 6px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        color: rgba(255, 255, 255, 0.8);
+        padding: 0 16px;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
 
         span {
-          background: rgba(255, 255, 255, 0.15);
-          padding: 2px 4px;
-          border-radius: 4px;
+          background: transparent;
+          padding: 0;
+          border-radius: 0;
         }
 
         &:hover {

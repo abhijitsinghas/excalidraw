@@ -252,6 +252,8 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
                   viewportZoomFactor: 1,
                   canvasOffsets: app.getEditorUIOffsets(),
                 });
+                // Select the frame so presentation starts from this slide
+                setAppState({ selectedElementIds: { [frame.id]: true } });
               }}
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={handleDragOver}
