@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useState, useRef } from "react";
 
 import { isFrameLikeElement, getFrameLikeTitle } from "@excalidraw/element";
+import { THEME } from "@excalidraw/common";
 
 import type {
   NonDeletedExcalidrawElement,
@@ -55,11 +56,16 @@ const PresentationMenuSlide = ({
     isUnmounted.current = false;
     const generatePreview = async () => {
       try {
-        const canvas = await exportToCanvas(elements, appState, files, {
-          exportBackground: true,
-          viewBackgroundColor: appState.viewBackgroundColor || "#ffffff",
-          exportingFrame: frame,
-        });
+        const canvas = await exportToCanvas(
+          elements,
+          { ...appState, exportWithDarkMode: appState.theme === THEME.DARK },
+          files,
+          {
+            exportBackground: true,
+            viewBackgroundColor: appState.viewBackgroundColor || "#ffffff",
+            exportingFrame: frame,
+          },
+        );
 
         if (!isUnmounted.current) {
           setPreviewUrl(canvas.toDataURL());
@@ -74,7 +80,7 @@ const PresentationMenuSlide = ({
     return () => {
       isUnmounted.current = true;
     };
-  }, [frame, elements, appState, files]);
+  }, [frame, elements, appState.theme, appState.viewBackgroundColor, files]);
 
   const frameName = getFrameLikeTitle(frame);
   const isDefaultFrameName =

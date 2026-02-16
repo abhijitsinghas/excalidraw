@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import rough from "roughjs/bin/rough";
-import { arrayToMap, toBrandedType } from "@excalidraw/common";
+import { arrayToMap, toBrandedType, THEME } from "@excalidraw/common";
 import {
   getElementsOverlappingFrame,
   syncInvalidIndices,
@@ -612,7 +612,12 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
 
   if (sortedFrames.length === 0) {
     return createPortal(
-      <div className="presentation-mode" ref={containerRef}>
+      <div
+        className={clsx("presentation-mode", {
+          "theme--dark": appState.theme === THEME.DARK,
+        })}
+        ref={containerRef}
+      >
         <div className="presentation-mode__empty">
           <h2>No Frames Found</h2>
           <p>Add frames to your canvas to create presentation slides.</p>
@@ -630,6 +635,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
       className={clsx("presentation-mode", {
         "presentation-mode--transitioning": isTransitioning,
         "presentation-mode--laser-enabled": laserEnabled,
+        "theme--dark": appState.theme === THEME.DARK,
       })}
       ref={containerRef}
       tabIndex={0}
