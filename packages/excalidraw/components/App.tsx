@@ -2218,23 +2218,23 @@ class App extends React.Component<AppProps, AppState> {
                               const frame =
                                 this.scene.getElementsFromId(currentFrameId);
                               if (frame?.length) {
-                                // Select the frame first (like clicking on a slide in sidebar)
-                                this.setState(
-                                  {
-                                    selectedElementIds: {
-                                      [currentFrameId]: true,
-                                    },
-                                  },
-                                  () => {
-                                    // Then scroll to content (same as PresentationMenu)
+                                // Use requestAnimationFrame to ensure DOM has updated after presentation mode exits
+                                requestAnimationFrame(() => {
+                                  requestAnimationFrame(() => {
                                     this.scrollToContent(frame[0], {
                                       animate: true,
                                       fitToViewport: true,
                                       viewportZoomFactor: 1,
                                       canvasOffsets: this.getEditorUIOffsets(),
                                     });
-                                  },
-                                );
+                                    // Select the frame (like clicking on a slide in sidebar)
+                                    this.setState({
+                                      selectedElementIds: {
+                                        [currentFrameId]: true,
+                                      },
+                                    });
+                                  });
+                                });
                               }
                             }
                             this.presentationModeEnabled = false;
@@ -4502,9 +4502,11 @@ class App extends React.Component<AppProps, AppState> {
       this.excalidrawContainerRef?.current
         ?.querySelector(".App-toolbar")
         ?.getBoundingClientRect()?.bottom ?? 0;
-    const sidebarRect = this.excalidrawContainerRef?.current
-      ?.querySelector(".sidebar")
-      ?.getBoundingClientRect();
+    // Query for both .sidebar and .sidebar--docked to ensure we get the correct element
+    const sidebarElement =
+      this.excalidrawContainerRef?.current?.querySelector(".sidebar--docked") ||
+      this.excalidrawContainerRef?.current?.querySelector(".sidebar");
+    const sidebarRect = sidebarElement?.getBoundingClientRect();
     const propertiesPanelRect = this.excalidrawContainerRef?.current
       ?.querySelector(".App-menu__left")
       ?.getBoundingClientRect();
