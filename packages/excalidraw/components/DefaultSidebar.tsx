@@ -35,12 +35,18 @@ const DefaultSidebarTrigger = withInternalFallback(
       React.HTMLAttributes<HTMLDivElement>,
   ) => {
     const { DefaultSidebarTriggerTunnel } = useTunnels();
+    const appState = useUIAppState();
+
+    // Use the last sidebar tab if available, otherwise default to library
+    const defaultTab = appState.lastSidebarTab || LIBRARY_SIDEBAR_TAB;
+
     return (
       <DefaultSidebarTriggerTunnel.In>
         <Sidebar.Trigger
           {...props}
           className="default-sidebar-trigger"
           name={DEFAULT_SIDEBAR.name}
+          tab={defaultTab}
         />
       </DefaultSidebarTriggerTunnel.In>
     );

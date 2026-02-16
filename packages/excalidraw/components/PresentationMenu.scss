@@ -87,7 +87,6 @@
     }
 
     &__slide-preview {
-      aspect-ratio: 16 / 9;
       background: var(--button-bg-color);
       display: flex;
       align-items: center;
@@ -99,8 +98,8 @@
 
       &-img {
         width: 100%;
-        height: 100%;
-        object-fit: contain;
+        height: auto;
+        display: block;
       }
 
       &-placeholder {
@@ -116,7 +115,7 @@
         left: 0;
         right: 0;
         background: rgba(255, 255, 255, 0.5);
-        padding: 0.5rem;
+        padding: 0.25rem 0.5rem;
         font-size: 0.875rem;
         font-weight: 500;
         color: var(--color-primary);
