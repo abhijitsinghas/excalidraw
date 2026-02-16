@@ -360,14 +360,13 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
     // Always request next frame for continuous animation
     laserAnimationRef.current = requestAnimationFrame(drawLaser);
 
-    if (points.length < 2) {
-      // Just draw current point
-      if (points.length === 1) {
-        ctx.beginPath();
-        ctx.arc(points[0].x, points[0].y, 8, 0, Math.PI * 2);
-        ctx.fillStyle = "red";
-        ctx.fill();
-      }
+    // Fade old points - match normal mode decay time of 1000ms
+    const now = performance.now();
+    laserPointsRef.current = points.filter((p) => now - p.time < 1000);
+
+    // Only draw the trail when pointer is down and we have enough points
+    if (points.length < 2 || !isPointerDownRef.current) {
+      // Let the trail fade away naturally - don't draw anything
       return;
     }
 
@@ -391,10 +390,6 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.stroke();
-
-    // Fade old points
-    const now = performance.now();
-    laserPointsRef.current = points.filter((p) => now - p.time < 2000);
   }, []);
 
   // Start animation loop on mount
