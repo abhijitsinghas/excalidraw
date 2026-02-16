@@ -4054,10 +4054,14 @@ class App extends React.Component<AppProps, AppState> {
     } else {
       const isPresentationSidebarOpen =
         this.state.openSidebar?.name === "presentation";
+
+      // Use the last opened sidebar tab, or default to presentation tab
+      const sidebarTab = this.state.lastSidebarTab;
+
       this.setAppState({
         openSidebar: isPresentationSidebarOpen
           ? null
-          : { name: "presentation" },
+          : { name: "presentation", tab: sidebarTab },
       });
     }
   };

@@ -391,6 +391,12 @@ export interface AppState {
    */
   defaultSidebarDockedPreference: boolean;
 
+  /**
+   * Tracks the last opened sidebar tab (library, presentation, or search)
+   * to restore the sidebar to the last used tab when opening.
+   */
+  lastSidebarTab: SidebarTabName;
+
   lastPointerDownWith: PointerType;
   selectedElementIds: Readonly<{ [id: string]: true }>;
   hoveredElementIds: Readonly<{ [id: string]: true }>;

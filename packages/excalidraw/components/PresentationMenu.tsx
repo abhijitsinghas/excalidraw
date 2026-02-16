@@ -76,6 +76,10 @@ const PresentationMenuSlide = ({
     };
   }, [frame, elements, appState, files]);
 
+  const frameName = getFrameLikeTitle(frame);
+  const isDefaultFrameName =
+    frameName === "Frame" || frameName.startsWith("Frame ");
+
   return (
     <div
       className="PresentationMenu__slide-item"
@@ -89,11 +93,17 @@ const PresentationMenuSlide = ({
         {previewUrl ? (
           <img
             src={previewUrl}
-            alt={getFrameLikeTitle(frame)}
+            alt={frameName}
             className="PresentationMenu__slide-preview-img"
           />
         ) : (
           <div className="PresentationMenu__slide-preview-placeholder" />
+        )}
+        {/* Show frame name if not default frame name - always visible */}
+        {!isDefaultFrameName && (
+          <div className="PresentationMenu__slide-preview-name">
+            {frameName}
+          </div>
         )}
       </div>
     </div>
@@ -202,7 +212,13 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
   return (
     <div className="PresentationMenu">
       <div className="PresentationMenu__header">
-        <h2 className="PresentationMenu__title">Presentation</h2>
+        <div className="PresentationMenu__header-title">
+          <h2 className="PresentationMenu__title">Presentation</h2>
+          <p className="PresentationMenu__subtitle">
+            {sortedFrames.length}{" "}
+            {sortedFrames.length === 1 ? "slide" : "slides"}
+          </p>
+        </div>
         <div className="PresentationMenu__header-actions">
           <ToolButton
             type="button"
