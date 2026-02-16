@@ -29,12 +29,7 @@ import { renderStaticScene } from "../renderer/staticScene";
 import { getDefaultAppState } from "../appState";
 import { Fonts } from "../fonts";
 
-import {
-  chevronLeftIcon as ChevronLeftIcon,
-  chevronRight as ChevronRightIcon,
-  stop as StopIcon,
-  laserPointerToolIcon,
-} from "./icons";
+import { laserPointerToolIcon } from "./icons";
 
 import "./PresentationMode.scss";
 
@@ -47,12 +42,45 @@ import type {
   AppClassProperties,
 } from "../types";
 
+// Custom arrow icons for presentation navigation
+const LeftArrowIcon = (
+  <svg
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    stroke="#444444"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
+const RightArrowIcon = (
+  <svg
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    stroke="#444444"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+
 interface PresentationModeProps {
   frames: readonly ExcalidrawFrameLikeElement[];
   elements: readonly NonDeletedExcalidrawElement[];
   appState: AppState;
   files: BinaryFiles;
-  onClose: () => void;
+  onClose: (currentFrameId: string | null) => void;
   app: AppClassProperties;
 }
 
@@ -127,6 +155,56 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
 
   const currentFrame = sortedFrames[currentSlideIndex];
 
+  // Handler for closing presentation that selects the current slide
+  const handleClose = useCallback(() => {
+    // Pass the current frame ID to onClose so parent can handle selection and scroll
+    onClose(currentFrame?.id ?? null);
+  }, [currentFrame, onClose]);
+
+  // Toolbar auto-hide state and timer
+  const [toolbarVisible, setToolbarVisible] = useState(true);
+  const toolbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Show toolbar and reset inactivity timer
+  const showToolbar = useCallback(() => {
+    setToolbarVisible(true);
+    if (toolbarTimerRef.current) {
+      clearTimeout(toolbarTimerRef.current);
+    }
+    // Auto-hide after 3 seconds of inactivity
+    toolbarTimerRef.current = setTimeout(() => {
+      setToolbarVisible(false);
+    }, 3000);
+  }, []);
+
+  // Track mouse movement to show toolbar
+  useEffect(() => {
+    const handleMouseMove = () => {
+      showToolbar();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (toolbarTimerRef.current) {
+        clearTimeout(toolbarTimerRef.current);
+      }
+    };
+  }, [showToolbar]);
+
+  // Initial timer to hide toolbar after 5 seconds on mount
+  useEffect(() => {
+    toolbarTimerRef.current = setTimeout(() => {
+      setToolbarVisible(false);
+    }, 5000);
+
+    return () => {
+      if (toolbarTimerRef.current) {
+        clearTimeout(toolbarTimerRef.current);
+      }
+    };
+  }, []);
+
   const updateDimensions = useCallback(() => {
     setDimensions({
       width: window.innerWidth,
@@ -160,7 +238,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
   useEffect(() => {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
-        onClose();
+        onClose(currentFrame?.id ?? null);
       }
       updateDimensions();
     };
@@ -168,7 +246,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, [onClose, updateDimensions]);
+  }, [onClose, updateDimensions, currentFrame]);
 
   // Update cursor when laser is enabled/disabled
   useEffect(() => {
@@ -200,7 +278,8 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
 
       container.style.cursor = `url(${url}), auto`;
     } else {
-      container.style.cursor = "none";
+      // Show default pointer cursor when laser is not enabled
+      container.style.cursor = "default";
     }
 
     return () => {
@@ -310,8 +389,10 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
         );
         setTimeout(() => setIsTransitioning(false), 50);
       }, 200);
+      // Show toolbar briefly after navigation
+      showToolbar();
     }
-  }, [currentSlideIndex, sortedFrames.length]);
+  }, [currentSlideIndex, sortedFrames.length, showToolbar]);
 
   const prevSlide = useCallback(() => {
     if (currentSlideIndex > 0) {
@@ -320,8 +401,10 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
         setCurrentSlideIndex((prev) => Math.max(prev - 1, 0));
         setTimeout(() => setIsTransitioning(false), 50);
       }, 200);
+      // Show toolbar briefly after navigation
+      showToolbar();
     }
-  }, [currentSlideIndex]);
+  }, [currentSlideIndex, showToolbar]);
 
   const laserCanvasRef = useRef<HTMLCanvasElement>(null);
   const laserPointsRef = useRef<{ x: number; y: number; time: number }[]>([]);
@@ -457,7 +540,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
         case "Escape":
           e.preventDefault();
           e.stopPropagation();
-          onClose();
+          handleClose();
           break;
         case "ArrowRight":
         case "ArrowDown":
@@ -502,7 +585,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
   }, [
     currentSlideIndex,
     sortedFrames.length,
-    onClose,
+    handleClose,
     prevSlide,
     nextSlide,
     setLaserEnabled,
@@ -533,7 +616,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
         <div className="presentation-mode__empty">
           <h2>No Frames Found</h2>
           <p>Add frames to your canvas to create presentation slides.</p>
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={() => onClose(null)}>
             Close
           </button>
         </div>
@@ -598,8 +681,11 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
       )}
 
       <div
-        className="presentation-mode__toolbar"
+        className={clsx("presentation-mode__toolbar", {
+          "presentation-mode__toolbar--visible": toolbarVisible,
+        })}
         onClick={(e) => e.stopPropagation()}
+        onMouseEnter={showToolbar}
       >
         <div className="presentation-mode__toolbar-group">
           <button
@@ -608,10 +694,10 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
             onClick={prevSlide}
             disabled={currentSlideIndex === 0}
           >
-            {ChevronLeftIcon}
+            {LeftArrowIcon}
           </button>
           <div className="presentation-mode__toolbar-counter">
-            {currentSlideIndex + 1} / {sortedFrames.length}
+            Slide {currentSlideIndex + 1}/{sortedFrames.length}
           </div>
           <button
             type="button"
@@ -619,7 +705,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
             onClick={nextSlide}
             disabled={currentSlideIndex === sortedFrames.length - 1}
           >
-            {ChevronRightIcon}
+            {RightArrowIcon}
           </button>
         </div>
         <div className="presentation-mode__toolbar-divider" />
@@ -630,16 +716,33 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
           })}
           onClick={() => setLaserEnabled(!laserEnabled)}
         >
-          {laserPointerToolIcon}
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {laserPointerToolIcon}
+          </span>
         </button>
         <div className="presentation-mode__toolbar-divider" />
         <button
           type="button"
           className="presentation-mode__toolbar-btn presentation-mode__toolbar-btn--exit"
-          onClick={onClose}
+          onClick={handleClose}
         >
-          {StopIcon}
-          <span>Exit Presentation</span>
+          <span
+            style={{
+              display: "inline-block",
+              width: 14,
+              height: 14,
+              backgroundColor: "#db3a34",
+              marginRight: 10,
+              flexShrink: 0,
+            }}
+          />
+          <span>End presentation</span>
         </button>
       </div>
 

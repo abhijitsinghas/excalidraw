@@ -2212,7 +2212,31 @@ class App extends React.Component<AppProps, AppState> {
                           appState={this.state}
                           files={this.files}
                           app={this}
-                          onClose={() => {
+                          onClose={(currentFrameId) => {
+                            // Select and zoom to the slide we exited from
+                            if (currentFrameId) {
+                              const frame =
+                                this.scene.getElementsFromId(currentFrameId);
+                              if (frame?.length) {
+                                // Select the frame first (like clicking on a slide in sidebar)
+                                this.setState(
+                                  {
+                                    selectedElementIds: {
+                                      [currentFrameId]: true,
+                                    },
+                                  },
+                                  () => {
+                                    // Then scroll to content (same as PresentationMenu)
+                                    this.scrollToContent(frame[0], {
+                                      animate: true,
+                                      fitToViewport: true,
+                                      viewportZoomFactor: 1,
+                                      canvasOffsets: this.getEditorUIOffsets(),
+                                    });
+                                  },
+                                );
+                              }
+                            }
                             this.presentationModeEnabled = false;
                             this.triggerRender(true);
                           }}

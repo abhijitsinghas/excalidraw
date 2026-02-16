@@ -775,6 +775,7 @@ export type AppClassProperties = {
   togglePresentationMode: App["togglePresentationMode"];
   laserTrails: App["laserTrails"];
   presentationLaserTrails: App["presentationLaserTrails"];
+  setAppState: App["setAppState"];
 };
 
 export type PointerDownState = Readonly<{
