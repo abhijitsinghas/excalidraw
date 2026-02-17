@@ -16,6 +16,10 @@ export const exportToPDF = async (
     scale?: number;
   },
 ) => {
+  // Default export options
+  const quality = exportOptions?.quality ?? 0.8;
+  const scale = exportOptions?.scale ?? 1;
+
   const frames = getNonDeletedElements(elements)
     .filter((element) => isFrameLikeElement(element))
     .sort((a, b) => {
@@ -46,7 +50,7 @@ export const exportToPDF = async (
 
     const canvas = await exportToCanvas(
       getNonDeletedElements(elements),
-      { ...appState, exportScale: 1 },
+      { ...appState, exportScale: scale },
       files,
       {
         exportBackground: appState.exportBackground,
@@ -55,7 +59,7 @@ export const exportToPDF = async (
       },
     );
 
-    const imgData = canvas.toDataURL("image/jpeg", 0.8);
+    const imgData = canvas.toDataURL("image/jpeg", quality);
 
     doc.addImage(imgData, "JPEG", 0, 0, frame.width, frame.height);
   }

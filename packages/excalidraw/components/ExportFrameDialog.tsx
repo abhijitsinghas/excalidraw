@@ -46,6 +46,8 @@ export const ExportFrameDialog = ({
   );
   const [loading, setLoading] = useState(true);
   const [customRange, setCustomRange] = useState("");
+  const [exportQuality, setExportQuality] = useState(0.8);
+  const [exportScale, setExportScale] = useState(1);
 
   useEffect(() => {
     const generatePreviews = async () => {
@@ -169,7 +171,10 @@ export const ExportFrameDialog = ({
         return;
       }
 
-      await exportToPDF(elementsToExport, appState as AppState, files);
+      await exportToPDF(elementsToExport, appState as AppState, files, {
+        quality: exportQuality,
+        scale: exportScale,
+      });
       onCloseRequest();
     } catch (error) {
       console.error(error);
@@ -280,6 +285,31 @@ export const ExportFrameDialog = ({
             </div>
 
             <h3>Export Options</h3>
+            <div className="ExportFrameDialog__options">
+              <label className="ExportFrameDialog__option">
+                <span>Quality: {Math.round(exportQuality * 100)}%</span>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1"
+                  step="0.1"
+                  value={exportQuality}
+                  onChange={(e) => setExportQuality(parseFloat(e.target.value))}
+                />
+              </label>
+              <label className="ExportFrameDialog__option">
+                <span>Scale: {exportScale}x</span>
+                <select
+                  value={exportScale}
+                  onChange={(e) => setExportScale(parseFloat(e.target.value))}
+                >
+                  <option value="1">1x (Standard)</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="2">2x (Retina)</option>
+                  <option value="3">3x (High DPI)</option>
+                </select>
+              </label>
+            </div>
             <FilledButton
               className="ExportFrameDialog__button"
               label="Export to PDF"
