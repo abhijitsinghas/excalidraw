@@ -11,6 +11,10 @@ export const exportToPDF = async (
   elements: readonly ExcalidrawElement[],
   appState: AppState,
   files: BinaryFiles,
+  exportOptions?: {
+    quality?: number;
+    scale?: number;
+  },
 ) => {
   const frames = getNonDeletedElements(elements)
     .filter((element) => isFrameLikeElement(element))
@@ -42,7 +46,7 @@ export const exportToPDF = async (
 
     const canvas = await exportToCanvas(
       getNonDeletedElements(elements),
-      appState,
+      { ...appState, exportScale: 1 },
       files,
       {
         exportBackground: appState.exportBackground,
@@ -51,9 +55,9 @@ export const exportToPDF = async (
       },
     );
 
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/jpeg", 0.8);
 
-    doc.addImage(imgData, "PNG", 0, 0, frame.width, frame.height);
+    doc.addImage(imgData, "JPEG", 0, 0, frame.width, frame.height);
   }
 
   doc.save(`excalidraw-export-${Date.now()}.pdf`);
