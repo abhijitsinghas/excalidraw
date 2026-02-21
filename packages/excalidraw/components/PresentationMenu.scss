@@ -68,11 +68,12 @@
       border: 1px solid var(--sidebar-border-color);
       border-radius: var(--border-radius-lg);
       overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
       display: flex;
       flex-direction: column;
       width: 100%;
       flex-shrink: 0;
+      position: relative;
 
       &:hover {
         transform: translateY(-2px);
@@ -83,6 +84,13 @@
       &.active {
         border-color: var(--color-primary);
         box-shadow: 0 0 0 2px var(--color-primary-light);
+      }
+
+      &.is-dragging {
+        opacity: 0.8;
+        box-shadow: var(--shadow-static-large);
+        border-color: var(--color-primary);
+        transform: scale(1.02);
       }
     }
 
@@ -123,6 +131,22 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      &-number {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 0.5rem;
+        background: var(--island-bg-color);
+        border: 1px solid var(--sidebar-border-color);
+        color: var(--text-primary-color);
+        padding: 0.125rem 0.5rem;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        z-index: 10;
+        pointer-events: none;
+        box-shadow: var(--shadow-static-small);
       }
     }
 

@@ -13,11 +13,9 @@ import { useUIAppState } from "../context/ui-appState";
 import { exportToCanvas } from "../scene/export";
 
 import { ToolButton } from "./ToolButton";
-import { PlusIcon, PlayIcon, DotsIcon, ExportIcon } from "./icons";
+import { PlusIcon, PlayIcon, ExportIcon } from "./icons";
 
 import { useExcalidrawSetAppState } from "./App";
-
-import DropdownMenu from "./dropdownMenu/DropdownMenu";
 
 import "./PresentationMenu.scss";
 
@@ -35,9 +33,10 @@ const PresentationMenuSlide = ({
   appState,
   files,
   onClick,
-  onDragStart,
-  onDragOver,
-  onDrop,
+  onPointerDown,
+  isDragging,
+  dragOffset,
+  shiftOffset,
 }: {
   frame: ExcalidrawFrameLikeElement;
   index: number;
@@ -45,9 +44,10 @@ const PresentationMenuSlide = ({
   appState: any;
   files: BinaryFiles;
   onClick: () => void;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
+  onPointerDown: (e: React.PointerEvent) => void;
+  isDragging: boolean;
+  dragOffset: number;
+  shiftOffset: number;
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const isUnmounted = useRef(false);
@@ -86,14 +86,22 @@ const PresentationMenuSlide = ({
   const isDefaultFrameName =
     frameName === "Frame" || frameName.startsWith("Frame ");
 
+  const translateY = isDragging ? dragOffset : shiftOffset;
+
   return (
     <div
-      className="PresentationMenu__slide-item"
-      draggable
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      className={`PresentationMenu__slide-item ${
+        isDragging ? "is-dragging" : ""
+      }`}
+      onPointerDown={onPointerDown}
       onClick={onClick}
+      style={{
+        transform: translateY !== 0 ? `translateY(${translateY}px)` : "none",
+        zIndex: isDragging ? 100 : 1,
+        transition: isDragging ? "none" : "transform 0.2s ease",
+        position: "relative",
+        userSelect: "none",
+      }}
     >
       <div className="PresentationMenu__slide-preview">
         {previewUrl ? (
@@ -101,16 +109,19 @@ const PresentationMenuSlide = ({
             src={previewUrl}
             alt={frameName}
             className="PresentationMenu__slide-preview-img"
+            draggable={false}
           />
         ) : (
           <div className="PresentationMenu__slide-preview-placeholder" />
         )}
-        {/* Show frame name if not default frame name - always visible */}
         {!isDefaultFrameName && (
           <div className="PresentationMenu__slide-preview-name">
             {frameName}
           </div>
         )}
+        <div className="PresentationMenu__slide-preview-number">
+          {index + 1}
+        </div>
       </div>
     </div>
   );
@@ -122,27 +133,21 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
   // @ts-ignore
   const files = app.files || {};
 
-  // Filter frames
   const frames = useMemo(() => {
     return elements.filter((element): element is ExcalidrawFrameLikeElement =>
       isFrameLikeElement(element),
     );
   }, [elements]);
 
-  // Derived sorted frames based on presentationSlideOrder or default sort
   const sortedFrames = useMemo(() => {
     if (appState.presentationSlideOrder) {
-      // Create a map for O(1) lookup
       const frameMap = new Map(frames.map((f) => [f.id, f]));
-      // Map order to frames, filtering out missing ones
       const ordered = appState.presentationSlideOrder
         .map((id) => frameMap.get(id))
         .filter((f): f is ExcalidrawFrameLikeElement => !!f);
 
-      // Add any new frames that aren't in the order yet order
       const orderedIds = new Set(ordered.map((f) => f.id));
       const remaining = frames.filter((f) => !orderedIds.has(f.id));
-      // Sort remaining by position
       remaining.sort((a, b) => {
         if (Math.abs(a.y - b.y) > 50) {
           return a.y - b.y;
@@ -153,7 +158,6 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
       return [...ordered, ...remaining];
     }
 
-    // Default sort: Top-down, then Left-right
     return [...frames].sort((a, b) => {
       if (Math.abs(a.y - b.y) > 50) {
         return a.y - b.y;
@@ -162,7 +166,6 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
     });
   }, [frames, appState.presentationSlideOrder]);
 
-  // Sync order to state if not set or if frames changed significantly
   useEffect(() => {
     const currentOrder = appState.presentationSlideOrder;
     const newOrder = sortedFrames.map((f) => f.id);
@@ -181,39 +184,144 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
     sortedFrames,
   ]);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    e.dataTransfer.setData("text/plain", index.toString());
-    e.dataTransfer.effectAllowed = "move";
-  };
+  // ─── Drag State ────────────────────────────────────────────────────────────
+  // All mutable drag data lives in refs so event handlers never go stale.
+  const dragStateRef = useRef<{
+    active: boolean;
+    draggedId: string | null;
+    draggedIndex: number;
+    startY: number;
+    currentTargetIndex: number;
+    itemHeight: number;
+    frameCount: number;
+  }>({
+    active: false,
+    draggedId: null,
+    draggedIndex: -1,
+    startY: 0,
+    currentTargetIndex: -1,
+    itemHeight: 120,
+    frameCount: 0,
+  });
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
+  const sortedFramesRef = useRef(sortedFrames);
+  const setAppStateRef = useRef(setAppState);
+  useEffect(() => {
+    sortedFramesRef.current = sortedFrames;
+    dragStateRef.current.frameCount = sortedFrames.length;
+  }, [sortedFrames]);
+  useEffect(() => {
+    setAppStateRef.current = setAppState;
+  }, [setAppState]);
 
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    const dragIndexStr = e.dataTransfer.getData("text/plain");
-    const dragIndex = parseInt(dragIndexStr, 10);
+  // React state only for triggering re-renders
+  const [dragRenderState, setDragRenderState] = useState<{
+    draggedId: string | null;
+    dragOffset: number;
+    targetIndex: number | null;
+  }>({ draggedId: null, dragOffset: 0, targetIndex: null });
 
-    if (dragIndex === dropIndex) {
+  const itemsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Register global pointer handlers once.
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      const ds = dragStateRef.current;
+      if (!ds.active) {
+        return;
+      }
+
+      const deltaY = e.clientY - ds.startY;
+
+      // Compute new target index
+      const shiftIndex = Math.round(deltaY / ds.itemHeight);
+      let newTarget = ds.draggedIndex + shiftIndex;
+      newTarget = Math.max(0, Math.min(ds.frameCount - 1, newTarget));
+
+      ds.currentTargetIndex = newTarget;
+
+      // Update React state so the component re-renders
+      setDragRenderState({
+        draggedId: ds.draggedId,
+        dragOffset: deltaY,
+        targetIndex: newTarget,
+      });
+    };
+
+    const onPointerUp = () => {
+      const ds = dragStateRef.current;
+      if (!ds.active) {
+        return;
+      }
+
+      const fromIndex = ds.draggedIndex;
+      const toIndex = ds.currentTargetIndex;
+
+      if (toIndex !== -1 && fromIndex !== toIndex) {
+        const newOrder = [...sortedFramesRef.current];
+        const [removed] = newOrder.splice(fromIndex, 1);
+        newOrder.splice(toIndex, 0, removed);
+        setAppStateRef.current({
+          presentationSlideOrder: newOrder.map((f) => f.id),
+        });
+      }
+
+      // Reset
+      ds.active = false;
+      ds.draggedId = null;
+      ds.draggedIndex = -1;
+      ds.currentTargetIndex = -1;
+      setDragRenderState({ draggedId: null, dragOffset: 0, targetIndex: null });
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, []); // Empty deps – handlers use refs and are stable.
+
+  const handlePointerDown = (
+    e: React.PointerEvent,
+    id: string,
+    index: number,
+  ) => {
+    if (e.button !== 0) {
       return;
     }
+    e.preventDefault(); // Prevent native image drag from hijacking pointer events
 
-    const newOrder = [...sortedFrames];
-    const [removed] = newOrder.splice(dragIndex, 1);
-    newOrder.splice(dropIndex, 0, removed);
+    // Measure the item height now (accurate at drag start)
+    let itemHeight = 120;
+    if (
+      itemsContainerRef.current &&
+      itemsContainerRef.current.children[index]
+    ) {
+      const child = itemsContainerRef.current.children[index] as HTMLElement;
+      itemHeight = child.offsetHeight + 8; // +8px gap
+    }
 
-    setAppState({ presentationSlideOrder: newOrder.map((f) => f.id) });
+    dragStateRef.current = {
+      active: true,
+      draggedId: id,
+      draggedIndex: index,
+      startY: e.clientY,
+      currentTargetIndex: index,
+      itemHeight,
+      frameCount: sortedFramesRef.current.length,
+    };
+
+    setDragRenderState({ draggedId: id, dragOffset: 0, targetIndex: index });
   };
 
   const createSlide = () => {
-    // Select frame tool
     app.setActiveTool({ type: "frame" });
-    setAppState({ openSidebar: null }); // Close sidebar to let user draw
+    setAppState({ openSidebar: null });
   };
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { draggedId, dragOffset, targetIndex } = dragRenderState;
 
   return (
     <div className="PresentationMenu">
@@ -228,60 +336,79 @@ export const PresentationMenu = ({ app, elements }: PresentationMenuProps) => {
         <div className="PresentationMenu__header-actions">
           <ToolButton
             type="button"
+            icon={ExportIcon}
+            title="Export slides"
+            aria-label="Export slides"
+            onClick={() => setAppState({ openDialog: { name: "frameExport" } })}
+            className="PresentationMenu__export-btn"
+          />
+          <ToolButton
+            type="button"
             icon={PlusIcon}
             title="Create slide"
             aria-label="Create slide"
             onClick={createSlide}
             className="PresentationMenu__create-btn"
           />
-          <DropdownMenu open={isMenuOpen}>
-            <DropdownMenu.Trigger
-              onToggle={() => setIsMenuOpen(!isMenuOpen)}
-              title="More"
-            >
-              {DotsIcon}
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content
-              onClickOutside={() => setIsMenuOpen(false)}
-              onSelect={() => setIsMenuOpen(false)}
-            >
-              <DropdownMenu.Item
-                onSelect={() =>
-                  setAppState({ openDialog: { name: "frameExport" } })
-                }
-                icon={ExportIcon}
-              >
-                Export slides
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu>
         </div>
       </div>
       <div className="PresentationMenu__content">
-        <div className="PresentationMenu__slides-list">
-          {sortedFrames.map((frame, index) => (
-            <PresentationMenuSlide
-              key={frame.id}
-              frame={frame}
-              index={index}
-              elements={elements}
-              appState={appState}
-              files={files}
-              onClick={() => {
-                app.scrollToContent(frame, {
-                  animate: true,
-                  fitToViewport: true,
-                  viewportZoomFactor: 1,
-                  canvasOffsets: app.getEditorUIOffsets(),
-                });
-                // Select the frame so presentation starts from this slide
-                setAppState({ selectedElementIds: { [frame.id]: true } });
-              }}
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index)}
-            />
-          ))}
+        <div className="PresentationMenu__slides-list" ref={itemsContainerRef}>
+          {sortedFrames.map((frame, index) => {
+            const isDragging = draggedId === frame.id;
+            const dragIndex = dragStateRef.current.draggedIndex;
+
+            let shiftOffset = 0;
+            if (
+              draggedId &&
+              !isDragging &&
+              targetIndex !== null &&
+              dragIndex !== -1
+            ) {
+              if (
+                dragIndex < targetIndex &&
+                index > dragIndex &&
+                index <= targetIndex
+              ) {
+                // Dragged down: non-dragged items in the range slide UP
+                shiftOffset = -dragStateRef.current.itemHeight;
+              } else if (
+                dragIndex > targetIndex &&
+                index >= targetIndex &&
+                index < dragIndex
+              ) {
+                // Dragged up: non-dragged items in the range slide DOWN
+                shiftOffset = dragStateRef.current.itemHeight;
+              }
+            }
+
+            return (
+              <PresentationMenuSlide
+                key={frame.id}
+                frame={frame}
+                index={index}
+                elements={elements}
+                appState={appState}
+                files={files}
+                onClick={() => {
+                  if (draggedId) {
+                    return;
+                  } // Prevent click during/after drag
+                  app.scrollToContent(frame, {
+                    animate: true,
+                    fitToViewport: true,
+                    viewportZoomFactor: 1,
+                    canvasOffsets: app.getEditorUIOffsets(),
+                  });
+                  setAppState({ selectedElementIds: { [frame.id]: true } });
+                }}
+                onPointerDown={(e) => handlePointerDown(e, frame.id, index)}
+                isDragging={isDragging}
+                dragOffset={dragOffset}
+                shiftOffset={shiftOffset}
+              />
+            );
+          })}
           {sortedFrames.length === 0 && (
             <div className="PresentationMenu__empty-state">
               <p>No slides yet.</p>
