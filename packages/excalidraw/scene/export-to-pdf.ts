@@ -14,21 +14,33 @@ export const exportToPDF = async (
   exportOptions?: {
     quality?: number;
     scale?: number;
+    orderedFrameIds?: string[];
   },
 ) => {
   // Default export options
   const quality = exportOptions?.quality ?? 0.8;
   const scale = exportOptions?.scale ?? 1;
 
-  const frames = getNonDeletedElements(elements)
-    .filter((element) => isFrameLikeElement(element))
-    .sort((a, b) => {
+  let frames = getNonDeletedElements(elements).filter((element) =>
+    isFrameLikeElement(element),
+  );
+
+  if (exportOptions?.orderedFrameIds) {
+    const orderMap = new Map(
+      exportOptions.orderedFrameIds.map((id, index) => [id, index]),
+    );
+    frames = frames
+      .filter((f) => orderMap.has(f.id))
+      .sort((a, b) => orderMap.get(a.id)! - orderMap.get(b.id)!);
+  } else {
+    frames = frames.sort((a, b) => {
       // Sort by y position then x position
       if (a.y === b.y) {
         return a.x - b.x;
       }
       return a.y - b.y;
     });
+  }
 
   if (frames.length === 0) {
     throw new Error("No frames found to export");

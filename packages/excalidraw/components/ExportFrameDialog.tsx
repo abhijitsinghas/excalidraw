@@ -44,10 +44,16 @@ export const ExportFrameDialog = ({
   const [selectedFrameIds, setSelectedFrameIds] = useState<Set<string>>(
     new Set(),
   );
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dropPosition, setDropPosition] = useState<{
+    index: number;
+    position: "before" | "after";
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [customRange, setCustomRange] = useState("");
   const [exportQuality, setExportQuality] = useState(0.8);
   const [exportScale, setExportScale] = useState(1);
+  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
     const generatePreviews = async () => {
@@ -156,6 +162,65 @@ export const ExportFrameDialog = ({
     setSelectedFrameIds(newSelectedIds);
   };
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    // Determine if we should drop before or after based on pointer position relative to target
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const position = x < rect.width / 2 ? "before" : "after";
+
+    if (dropPosition?.index !== index || dropPosition?.position !== position) {
+      setDropPosition({ index, position });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDropPosition(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || !dropPosition) {
+      return;
+    }
+    if (draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDropPosition(null);
+      return;
+    }
+
+    const newPreviews = [...framePreviews];
+    const [draggedItem] = newPreviews.splice(draggedIndex, 1);
+
+    // Calculate new index
+    let insertIndex = dropPosition.index;
+
+    // If we removed an item from before the insertion point, the array shifted left
+    if (draggedIndex < dropPosition.index) {
+      insertIndex--;
+    }
+
+    // If dropping after, increment index
+    if (dropPosition.position === "after") {
+      insertIndex++;
+    }
+
+    newPreviews.splice(insertIndex, 0, draggedItem);
+
+    setFramePreviews(newPreviews);
+    setDraggedIndex(null);
+    setDropPosition(null);
+  };
+
   const handleExportPdf = async () => {
     try {
       const { exportToPDF } = await import("../scene/export-to-pdf");
@@ -171,9 +236,14 @@ export const ExportFrameDialog = ({
         return;
       }
 
+      const orderedFrameIds = framePreviews
+        .filter((p) => selectedFrameIds.has(p.id))
+        .map((p) => p.id);
+
       await exportToPDF(elementsToExport, appState as AppState, files, {
         quality: exportQuality,
         scale: exportScale,
+        orderedFrameIds,
       });
       onCloseRequest();
     } catch (error) {
@@ -197,7 +267,13 @@ export const ExportFrameDialog = ({
         return;
       }
 
-      await exportToPPTX(elementsToExport, appState as AppState, files);
+      const orderedFrameIds = framePreviews
+        .filter((p) => selectedFrameIds.has(p.id))
+        .map((p) => p.id);
+
+      await exportToPPTX(elementsToExport, appState as AppState, files, {
+        orderedFrameIds,
+      });
       onCloseRequest();
     } catch (error) {
       console.error(error);
@@ -214,16 +290,33 @@ export const ExportFrameDialog = ({
               <div>Loading previews...</div>
             ) : (
               <div className="ExportFrameDialog__preview-list">
-                {framePreviews.map((preview) => (
+                {framePreviews.map((preview, index) => (
                   <div
                     key={preview.id}
-                    className="ExportFrameDialog__preview-item"
+                    className={`ExportFrameDialog__preview-item ${
+                      selectedFrameIds.has(preview.id)
+                        ? "ExportFrameDialog__preview-item--selected"
+                        : ""
+                    } ${
+                      draggedIndex === index
+                        ? "ExportFrameDialog__preview-item--dragging"
+                        : ""
+                    } ${
+                      dropPosition?.index === index
+                        ? `ExportFrameDialog__preview-item--drop-${dropPosition.position}`
+                        : ""
+                    }`}
                     onClick={() =>
                       handleCheckboxChange(
                         preview.id,
                         !selectedFrameIds.has(preview.id),
                       )
                     }
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDrop={(e) => handleDrop(e, index)}
                   >
                     <div className="ExportFrameDialog__preview-image">
                       {preview.blob && (
@@ -232,6 +325,9 @@ export const ExportFrameDialog = ({
                           alt={preview.name}
                         />
                       )}
+                      <div className="ExportFrameDialog__preview-title">
+                        {preview.name}
+                      </div>
                       <div className="ExportFrameDialog__preview-checkbox">
                         <CheckboxItem
                           checked={selectedFrameIds.has(preview.id)}
@@ -251,83 +347,98 @@ export const ExportFrameDialog = ({
               </div>
             )}
           </div>
-          <div className="ExportFrameDialog__actions">
-            <div className="ExportFrameDialog__selection">
-              <h3>Select</h3>
-              <div className="ExportFrameDialog__selection-buttons">
+          <div className="ExportFrameDialog__right-panel">
+            <div className="ExportFrameDialog__controls">
+              <div className="ExportFrameDialog__row">
                 <button
                   type="button"
                   className="ExportFrameDialog__button--secondary"
                   onClick={handleSelectAll}
                 >
-                  All
+                  Select All
                 </button>
                 <button
                   type="button"
                   className="ExportFrameDialog__button--secondary"
                   onClick={handleSelectNone}
                 >
-                  None
+                  Unselect All
                 </button>
               </div>
-              <div className="ExportFrameDialog__selection-custom">
+              <div className="ExportFrameDialog__row">
                 <TextField
                   value={customRange}
-                  placeholder="e.g. 1, 2, 5-9"
+                  placeholder="e.g., 1,2,5-9"
                   onChange={handleCustomRangeChange}
                   label="Custom Range"
+                  className="ExportFrameDialog__range"
                 />
               </div>
-              <div className="ExportFrameDialog__selection-count">
-                {selectedFrameIds.size} frame
-                {selectedFrameIds.size !== 1 ? "s" : ""} selected
+              <div className="ExportFrameDialog__row ExportFrameDialog__count-row">
+                <span className="ExportFrameDialog__count">
+                  {selectedFrameIds.size} frames selected
+                </span>
               </div>
             </div>
 
-            <h3>Export Options</h3>
-            <div className="ExportFrameDialog__options">
-              <label className="ExportFrameDialog__option">
-                <span>Quality: {Math.round(exportQuality * 100)}%</span>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  value={exportQuality}
-                  onChange={(e) => setExportQuality(parseFloat(e.target.value))}
-                />
-              </label>
-              <label className="ExportFrameDialog__option">
-                <span>Scale: {exportScale}x</span>
-                <select
-                  value={exportScale}
-                  onChange={(e) => setExportScale(parseFloat(e.target.value))}
-                >
-                  <option value="1">1x (Standard)</option>
-                  <option value="1.5">1.5x</option>
-                  <option value="2">2x (Retina)</option>
-                  <option value="3">3x (High DPI)</option>
-                </select>
-              </label>
+            <button
+              type="button"
+              className="ExportFrameDialog__options-toggle"
+              onClick={() => setShowOptions(!showOptions)}
+            >
+              {showOptions ? "▼ Hide" : "▲ Show"} Export Options
+            </button>
+
+            {showOptions && (
+              <div className="ExportFrameDialog__options">
+                <label className="ExportFrameDialog__option">
+                  <span>Quality: {Math.round(exportQuality * 100)}%</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.1"
+                    value={exportQuality}
+                    onChange={(e) =>
+                      setExportQuality(parseFloat(e.target.value))
+                    }
+                  />
+                </label>
+                <label className="ExportFrameDialog__option">
+                  <span>Scale: {exportScale}x</span>
+                  <select
+                    value={exportScale}
+                    onChange={(e) => setExportScale(parseFloat(e.target.value))}
+                  >
+                    <option value="1">1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                    <option value="3">3x</option>
+                  </select>
+                </label>
+              </div>
+            )}
+
+            <div className="ExportFrameDialog__actions">
+              <FilledButton
+                className="ExportFrameDialog__button"
+                label="Export to PDF"
+                onClick={handleExportPdf}
+                icon={downloadIcon}
+                disabled={selectedFrameIds.size === 0}
+              >
+                Export to PDF
+              </FilledButton>
+              <FilledButton
+                className="ExportFrameDialog__button"
+                label="Export to PPTX"
+                onClick={handleExportPptx}
+                icon={downloadIcon}
+                disabled={selectedFrameIds.size === 0}
+              >
+                Export to PPTX
+              </FilledButton>
             </div>
-            <FilledButton
-              className="ExportFrameDialog__button"
-              label="Export to PDF"
-              onClick={handleExportPdf}
-              icon={downloadIcon}
-              disabled={selectedFrameIds.size === 0}
-            >
-              Export to PDF
-            </FilledButton>
-            <FilledButton
-              className="ExportFrameDialog__button"
-              label="Export to PPTX"
-              onClick={handleExportPptx}
-              icon={downloadIcon}
-              disabled={selectedFrameIds.size === 0}
-            >
-              Export to PPTX
-            </FilledButton>
           </div>
         </div>
       </div>
