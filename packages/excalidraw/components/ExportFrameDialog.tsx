@@ -52,7 +52,10 @@ export const ExportFrameDialog = ({
   const [loading, setLoading] = useState(true);
   const [customRange, setCustomRange] = useState("");
   const [exportQuality, setExportQuality] = useState(0.8);
-  const [exportScale, setExportScale] = useState(1);
+  const [exportScale, setExportScale] = useState(2);
+  const [exportStyle, setExportStyle] = useState<"hand-drawn" | "vector">(
+    "vector",
+  );
   const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
@@ -242,8 +245,9 @@ export const ExportFrameDialog = ({
 
       await exportToPDF(elementsToExport, appState as AppState, files, {
         quality: exportQuality,
-        scale: exportScale,
+        scale: exportScale || 1,
         orderedFrameIds,
+        exportStyle,
       });
       onCloseRequest();
     } catch (error) {
@@ -273,6 +277,7 @@ export const ExportFrameDialog = ({
 
       await exportToPPTX(elementsToExport, appState as AppState, files, {
         orderedFrameIds,
+        exportStyle,
       });
       onCloseRequest();
     } catch (error) {
@@ -405,7 +410,7 @@ export const ExportFrameDialog = ({
                   />
                 </label>
                 <label className="ExportFrameDialog__option">
-                  <span>Scale: {exportScale}x</span>
+                  <span>Scale: {exportScale || 1}x</span>
                   <select
                     value={exportScale}
                     onChange={(e) => setExportScale(parseFloat(e.target.value))}
@@ -414,6 +419,18 @@ export const ExportFrameDialog = ({
                     <option value="1.5">1.5x</option>
                     <option value="2">2x</option>
                     <option value="3">3x</option>
+                  </select>
+                </label>
+                <label className="ExportFrameDialog__option">
+                  <span>Export Style:</span>
+                  <select
+                    value={exportStyle}
+                    onChange={(e) =>
+                      setExportStyle(e.target.value as "hand-drawn" | "vector")
+                    }
+                  >
+                    <option value="vector">Selectable/Vector</option>
+                    <option value="hand-drawn">Hand-Drawn</option>
                   </select>
                 </label>
               </div>

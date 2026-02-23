@@ -30,11 +30,13 @@ export const exportToPPTX = async (
   files: BinaryFiles,
   exportOptions?: {
     orderedFrameIds?: string[];
+    exportStyle?: "hand-drawn" | "vector";
   },
 ) => {
   const pres = new pptxgen();
   const allElements = getNonDeletedElements(elements);
   const elementsMap = arrayToMap(allElements);
+  const exportStyle = exportOptions?.exportStyle ?? "vector";
 
   let frames = allElements.filter((element) => isFrameLikeElement(element));
 
@@ -60,7 +62,6 @@ export const exportToPPTX = async (
 
   for (const frame of frames) {
     const slide = pres.addSlide();
-    const frameElements = getFrameChildren(allElements, frame.id);
 
     // Calculate scale to fit frame into slide while maintaining aspect ratio
     const scale = Math.min(
@@ -71,6 +72,8 @@ export const exportToPPTX = async (
     // Center frame on slide
     const offsetX = (SLIDE_WIDTH - frame.width * scale) / 2;
     const offsetY = (SLIDE_HEIGHT - frame.height * scale) / 2;
+
+    const frameElements = getFrameChildren(allElements, frame.id);
 
     // Add slide title if available
     const name = getFrameLikeTitle(frame);
@@ -109,56 +112,112 @@ export const exportToPPTX = async (
       if (
         element.type === "rectangle" ||
         element.type === "ellipse" ||
-        element.type === "diamond"
+        element.type === "diamond" ||
+        element.type === "line" ||
+        element.type === "arrow" ||
+        element.type === "freedraw"
       ) {
-        const shapeType =
-          element.type === "rectangle"
-            ? pres.ShapeType.rect
-            : element.type === "ellipse"
-            ? pres.ShapeType.ellipse
-            : pres.ShapeType.diamond;
+        // If hand-drawn style and sketchy, rasterize the individual element
+        const isSketchy = (element as any).roughness > 0;
+        if (
+          exportStyle === "hand-drawn" &&
+          (isSketchy || element.type === "freedraw")
+        ) {
+          try {
+            const canvas = await exportToCanvas([element], appState, files, {
+              exportBackground: false,
+              viewBackgroundColor: appState.viewBackgroundColor,
+              exportPadding: 0,
+            });
+            slide.addImage({
+              data: canvas.toDataURL("image/png"),
+              ...coords,
+              rotate: (element.angle * 180) / Math.PI,
+            });
+            continue;
+          } catch (e) {
+            console.error(`Failed to rasterize element ${element.id}`, e);
+          }
+        }
 
-        const boundText = getBoundTextElement(element, elementsMap);
-        const props: any = {
-          ...commonProps,
-          fill:
-            element.backgroundColor !== "transparent"
-              ? { color: toHex(element.backgroundColor) }
-              : undefined,
-          line: {
-            color: toHex(element.strokeColor),
-            width: element.strokeWidth * 0.75, // pxl to pt conversion approx
-            dashType:
-              element.strokeStyle === "dashed"
-                ? "dash"
-                : element.strokeStyle === "dotted"
-                ? "sysDot"
-                : "solid",
-          },
-        };
+        if (
+          element.type === "rectangle" ||
+          element.type === "ellipse" ||
+          element.type === "diamond"
+        ) {
+          const shapeType =
+            element.type === "rectangle"
+              ? pres.ShapeType.rect
+              : element.type === "ellipse"
+              ? pres.ShapeType.ellipse
+              : pres.ShapeType.diamond;
 
-        if (boundText) {
-          slide.addText(boundText.text, {
-            ...props,
-            shape: shapeType,
-            align: boundText.textAlign,
-            valign:
-              boundText.verticalAlign === "middle"
-                ? "middle"
-                : boundText.verticalAlign === "bottom"
-                ? "bottom"
-                : "top",
-            fontSize: boundText.fontSize,
-            fontFace:
-              boundText.fontFamily === 1
-                ? "Comic Sans MS"
-                : boundText.fontFamily === 3
-                ? "Courier New"
-                : "Arial",
-            color: toHex(boundText.strokeColor),
+          const boundText = getBoundTextElement(element, elementsMap);
+          const props: any = {
+            ...commonProps,
+            fill:
+              element.backgroundColor !== "transparent"
+                ? { color: toHex(element.backgroundColor) }
+                : undefined,
+            line: {
+              color: toHex(element.strokeColor),
+              width: element.strokeWidth * 0.75, // pxl to pt conversion approx
+              dashType:
+                element.strokeStyle === "dashed"
+                  ? "dash"
+                  : element.strokeStyle === "dotted"
+                  ? "sysDot"
+                  : "solid",
+            },
+          };
+
+          if (boundText) {
+            slide.addText(boundText.text, {
+              ...props,
+              shape: shapeType,
+              align: boundText.textAlign,
+              valign:
+                boundText.verticalAlign === "middle"
+                  ? "middle"
+                  : boundText.verticalAlign === "bottom"
+                  ? "bottom"
+                  : "top",
+              fontSize: boundText.fontSize,
+              fontFace:
+                boundText.fontFamily === 1
+                  ? "Comic Sans MS"
+                  : boundText.fontFamily === 3
+                  ? "Courier New"
+                  : "Arial",
+              color: toHex(boundText.strokeColor),
+            });
+          } else {
+            slide.addShape(shapeType, props);
+          }
+        } else if (element.type === "line" || element.type === "arrow") {
+          slide.addShape(pres.ShapeType.line, {
+            ...commonProps,
+            line: {
+              color: toHex(element.strokeColor),
+              width: element.strokeWidth * 0.75,
+              dashType:
+                element.strokeStyle === "dashed"
+                  ? "dash"
+                  : element.strokeStyle === "dotted"
+                  ? "sysDot"
+                  : "solid",
+              beginArrowType:
+                element.type === "arrow" && element.startArrowhead
+                  ? "arrow"
+                  : "none",
+              endArrowType:
+                element.type === "arrow" && element.endArrowhead
+                  ? "arrow"
+                  : "none",
+            },
+            flipH: element.width < 0,
+            flipV: element.height < 0,
           });
-        } else {
-          slide.addShape(shapeType, props);
         }
       } else if (element.type === "text") {
         // Skip if it's a bound text (already handled by container)
@@ -183,30 +242,6 @@ export const exportToPPTX = async (
               ? "Courier New"
               : "Arial",
           color: toHex(element.strokeColor),
-        });
-      } else if (element.type === "line" || element.type === "arrow") {
-        slide.addShape(pres.ShapeType.line, {
-          ...commonProps,
-          line: {
-            color: toHex(element.strokeColor),
-            width: element.strokeWidth * 0.75,
-            dashType:
-              element.strokeStyle === "dashed"
-                ? "dash"
-                : element.strokeStyle === "dotted"
-                ? "sysDot"
-                : "solid",
-            beginArrowType:
-              element.type === "arrow" && element.startArrowhead
-                ? "arrow"
-                : "none",
-            endArrowType:
-              element.type === "arrow" && element.endArrowhead
-                ? "arrow"
-                : "none",
-          },
-          flipH: element.width < 0,
-          flipV: element.height < 0,
         });
       } else if (element.type === "image") {
         const fileData = element.fileId ? files[element.fileId] : null;
