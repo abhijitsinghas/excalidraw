@@ -292,10 +292,11 @@ async function render(
   config?: { skipExcalidrawWrapper?: boolean },
 ) {
   if (config?.skipExcalidrawWrapper) {
-    const { render: rtlRender } = await import("../../tests/test-utils");
-    return rtlRender(element, options);
+    // Use basic RTL render for unit tests
+    const RTL = await import("@testing-library/react");
+    return RTL.render(element, options);
   }
-  // Normal render path
+  // Normal render path - use the async Excalidraw render
   const { render: rtlRender } = await import("../../tests/test-utils");
   return rtlRender(element, options);
 }

@@ -28,9 +28,21 @@ const canvasToJPEGDataURL = (
   canvas: HTMLCanvasElement,
   quality: number,
 ): string => {
-  // Quality is 0-100, convert to 0-1 for canvas
-  const jpegQuality = Math.max(0, Math.min(1, quality / 100));
-  return canvas.toDataURL("image/jpeg", jpegQuality);
+  try {
+    // Quality is 0-100, convert to 0-1 for canvas
+    const jpegQuality = Math.max(0, Math.min(1, quality / 100));
+    const dataUrl = canvas.toDataURL("image/jpeg", jpegQuality);
+
+    // Validate that we got actual data
+    if (!dataUrl || dataUrl === "data:,") {
+      return "";
+    }
+
+    return dataUrl;
+  } catch (error) {
+    console.warn("Failed to convert canvas to JPEG:", error);
+    return "";
+  }
 };
 
 /**
@@ -41,13 +53,13 @@ export const exportToPPTX = async (
   settings: ExportSettings,
   renderSlideToCanvas: RenderSlideToCanvasCallback,
 ): Promise<Blob> => {
-  // Dynamically import pptxgen-js
+  // Dynamically import pptxgenjs
   let pptxgen: any;
   try {
-    const pptxModule = await import("pptxgen-js");
+    const pptxModule = await import("pptxgenjs");
     pptxgen = pptxModule.default;
   } catch (error) {
-    console.error("pptxgen-js not installed, returning empty PPTX");
+    console.error("pptxgenjs not installed, returning empty PPTX");
     return new Blob([""], {
       type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     });
@@ -84,18 +96,21 @@ export const exportToPPTX = async (
       // Convert to image data with compression
       const imageData = canvasToJPEGDataURL(scaledCanvas, settings.compression);
 
-      // Add image to slide, filling the entire slide
-      pptSlide.addImage({
-        data: imageData,
-        x: 0,
-        y: 0,
-        w: slideWidth,
-        h: slideHeight,
-      });
+      // Only add image if we got valid data
+      if (imageData && imageData.startsWith("data:image")) {
+        // Add image to slide, filling the entire slide
+        pptSlide.addImage({
+          data: imageData,
+          x: 0,
+          y: 0,
+          w: slideWidth,
+          h: slideHeight,
+        });
+      }
 
       // Add animations metadata if requested
       if (settings.preserveAnimations) {
-        // Note: pptxgen-js has limited animation support
+        // Note: pptxgenjs has limited animation support
         // This is a placeholder for future animation implementation
         // For now, we'll just note that animations were requested but not implemented
       }
@@ -118,18 +133,19 @@ export const exportToPPTX = async (
   }
 
   // Return PPTX as Blob
-  // PptxGen writeFile returns a Promise<Blob> in browser environments
-  // or we can save with specific options
-  if (typeof (pres as any).asBlob === "function") {
-    return (pres as any).asBlob() as Promise<Blob>;
-  } else if (typeof (pres as any).write === "function") {
-    return (pres as any).write({ outputType: "blob" }) as Promise<Blob>;
-  } else {
-    // Fallback to empty blob if library methods aren't available
-    return Promise.resolve(
-      new Blob([], {
-        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      }),
-    );
+  // pptxgenjs's write method returns a Promise<Blob> in browser environments
+  try {
+    if (typeof (pres as any).write === "function") {
+      return await (pres as any).write({ outputType: "blob" });
+    } else if (typeof (pres as any).asBlob === "function") {
+      return await (pres as any).asBlob();
+    }
+  } catch (error) {
+    console.error("Failed to generate PPTX:", error);
   }
+
+  // Fallback to empty blob if library methods aren't available
+  return new Blob([], {
+    type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  });
 };

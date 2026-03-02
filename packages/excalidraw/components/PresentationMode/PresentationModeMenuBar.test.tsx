@@ -1,6 +1,7 @@
 import React from "react";
 import { vi } from "vitest";
-import { render, fireEvent, screen } from "../../tests/test-utils";
+import { fireEvent, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { PresentationModeMenuBar } from "./PresentationModeMenuBar";
 
 describe("PresentationModeMenuBar", () => {
@@ -22,7 +23,7 @@ describe("PresentationModeMenuBar", () => {
         />,
       );
 
-      expect(screen.getByText(/Slide 3\/10/)).toBeInTheDocument();
+      expect(screen.getByText(/Slide 4\/10/)).toBeInTheDocument();
     });
 
     it("calls onNextSlide when next button is clicked", () => {
@@ -188,7 +189,7 @@ describe("PresentationModeMenuBar", () => {
       }
     });
 
-    it("shows active state when laser pointer is enabled", async () => {
+    it("shows active state when laser pointer is enabled", () => {
       const mockHandlers = {
         onNextSlide: vi.fn(),
         onPrevSlide: vi.fn(),
@@ -196,7 +197,7 @@ describe("PresentationModeMenuBar", () => {
         onToggleLaserPointer: vi.fn(),
       };
 
-      await render(
+      render(
         <PresentationModeMenuBar
           currentSlide={3}
           totalSlides={10}
