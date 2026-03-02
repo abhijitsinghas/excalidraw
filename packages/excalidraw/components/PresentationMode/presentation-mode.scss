@@ -1,0 +1,290 @@
+// Presentation Mode Styles
+// Full-screen presentation overlay with menu bar and navigation
+
+$presentation-z-index: 10000;
+$menu-bar-height: 60px;
+$button-transition: 0.2s ease-in-out;
+$menu-bar-blur-radius: 12px;
+
+// Main presentation container
+.presentation-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  z-index: $presentation-z-index;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__canvas-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: calc(100% - #{$menu-bar-height});
+    background-color: #000000;
+    overflow: hidden;
+  }
+
+  &__canvas {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+  }
+
+  // Menu bar styling
+  &__menu-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: $menu-bar-height;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur($menu-bar-blur-radius);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    gap: 24px;
+    color: #ffffff;
+    z-index: $presentation-z-index + 1;
+  }
+
+  // Menu sections layout
+  &__menu-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    &--left {
+      flex: 0;
+      gap: 16px;
+    }
+
+    &--center {
+      flex: 1;
+      justify-content: center;
+    }
+
+    &--right {
+      flex: 0;
+    }
+  }
+
+  // Navigation buttons (arrows)
+  &__nav-button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all $button-transition;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: scale(1.05);
+    }
+
+    &:active:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: scale(0.95);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  // Slide counter text
+  &__slide-counter {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+    color: #ffffff;
+    user-select: none;
+  }
+
+  // Laser pointer button
+  &__laser-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all $button-transition;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    }
+
+    // Active state when laser pointer is on
+    &--active {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: rgba(255, 0, 0, 0.5);
+    }
+
+    &--active:hover {
+      background: rgba(255, 0, 0, 0.3);
+      border-color: rgba(255, 0, 0, 0.7);
+    }
+  }
+
+  // Laser pointer indicator dot
+  &__laser-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(255, 0, 0, 0.5);
+    display: inline-block;
+    transition: all $button-transition;
+
+    .presentation-mode__laser-button--active & {
+      background-color: #ff0000;
+      box-shadow: 0 0 6px rgba(255, 0, 0, 0.8);
+    }
+
+    .presentation-mode__laser-button:hover & {
+      filter: brightness(1.2);
+    }
+  }
+
+  // Exit button
+  &__exit-button {
+    background: rgba(200, 0, 0, 0.2);
+    border: 1px solid rgba(200, 0, 0, 0.4);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all $button-transition;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: rgba(200, 0, 0, 0.3);
+      border-color: rgba(200, 0, 0, 0.6);
+      transform: scale(1.05);
+    }
+
+    &:active {
+      background-color: rgba(200, 0, 0, 0.4);
+      transform: scale(0.95);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(200, 0, 0, 0.5);
+    }
+  }
+}
+
+// Responsive adjustments for small screens
+@media (max-width: 640px) {
+  .presentation-mode {
+    &__menu-bar {
+      padding: 0 12px;
+      gap: 8px;
+      height: 50px;
+    }
+
+    &__menu-section {
+      gap: 8px;
+
+      &--left {
+        gap: 8px;
+      }
+
+      &--center {
+        flex: 0;
+      }
+    }
+
+    &__nav-button {
+      padding: 6px 8px;
+      min-width: 32px;
+      height: 32px;
+      font-size: 14px;
+    }
+
+    &__slide-counter {
+      font-size: 12px;
+      min-width: 70px;
+    }
+
+    &__laser-button,
+    &__exit-button {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    &__canvas-wrapper {
+      height: calc(100% - 50px);
+    }
+  }
+}
+
+// Dark theme adjustments (already dark, but ensure contrast)
+@media (prefers-color-scheme: dark) {
+  .presentation-mode {
+    &__menu-bar {
+      background-color: rgba(20, 20, 20, 0.8);
+    }
+
+    &__nav-button {
+      border-color: rgba(255, 255, 255, 0.25);
+
+      &:hover:not(:disabled) {
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+}
+
+// Ensure presentation mode is on top of all other overlays
+.presentation-mode {
+  // Override any z-index from parent elements
+  isolation: isolate;
+}
