@@ -377,7 +377,7 @@ export interface AppState {
   openSidebar: { name: SidebarName; tab?: SidebarTabName } | null;
   openDialog:
     | null
-    | { name: "imageExport" | "help" | "jsonExport" }
+    | { name: "imageExport" | "help" | "jsonExport" | "slidesExport" }
     | { name: "ttd"; tab: "text-to-diagram" | "mermaid" }
     | { name: "commandPalette" }
     | { name: "settings" }
@@ -405,6 +405,15 @@ export interface AppState {
   gridStep: number;
   gridModeEnabled: boolean;
   viewModeEnabled: boolean;
+
+  /** presentation mode (full-screen slide show) */
+  presentationModeEnabled: boolean;
+  /** current slide index when in presentation mode */
+  currentSlideIndex: number;
+  /** whether presentation sidebar is open */
+  presentationSidebarOpen: boolean;
+  /** laser pointer enabled in presentation mode */
+  laserPointerEnabled: boolean;
 
   /** top-most selected groups (i.e. does not include nested groups) */
   selectedGroupIds: { [groupId: string]: boolean };

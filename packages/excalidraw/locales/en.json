@@ -702,6 +702,36 @@
     "itemNotAvailable": "Command is not available...",
     "shortcutHint": "For Command palette, use {{shortcut}}"
   },
+  "presentation": {
+    "title": "Presentation",
+    "noSlides": "No slides yet",
+    "createSlide": "Create Slide",
+    "newSlide": "New Slide",
+    "export": "Export",
+    "exportSlides": "Export Slides...",
+    "startPresentation": "Start Presentation",
+    "exit": "Exit",
+    "previous": "Previous",
+    "next": "Next",
+    "slide": "Slide",
+    "laser": "Laser Pointer"
+  },
+  "slidesExport": {
+    "title": "Export Slides",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selectedSlides": "{{count}} slides selected",
+    "format": "Format",
+    "quality": "Quality",
+    "qualityLow": "Low",
+    "qualityMedium": "Medium",
+    "qualityHigh": "High",
+    "exportVectors": "Export vectors",
+    "exportRasterize": "Export rasterize",
+    "preserveHanddrawn": "Preserve handdrawn",
+    "cancel": "Cancel",
+    "exportButton": "Export"
+  },
   "keys": {
     "ctrl": "Ctrl",
     "option": "Option",

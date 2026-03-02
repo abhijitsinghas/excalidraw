@@ -1,0 +1,196 @@
+.presentation-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-3);
+  box-sizing: border-box;
+
+  &--empty {
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__empty {
+    text-align: center;
+    color: var(--text-color-primary);
+    
+    p {
+      margin-bottom: var(--space-4);
+    }
+  }
+
+  &__create-button {
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--color-primary-hover);
+    }
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-color-primary);
+  }
+
+  &__counter {
+    font-size: var(--font-size-sm);
+    color: var(--text-color-secondary);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  &__button {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-color-tertiary);
+    color: var(--text-color-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--bg-color-secondary);
+    }
+
+    &--primary {
+      background: var(--color-primary);
+      color: var(--color-primary-text);
+      border-color: var(--color-primary);
+
+      &:hover {
+        background: var(--color-primary-hover);
+      }
+    }
+  }
+
+  &__slides {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: var(--space-3);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  &__thumbnail {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-color-secondary);
+    border: 2px solid transparent;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+
+    &:hover {
+      border-color: var(--color-primary-hover);
+    }
+
+    &--selected {
+      border-color: var(--color-primary);
+    }
+
+    &__number {
+      position: absolute;
+      top: var(--space-1);
+      left: var(--space-1);
+      width: 20px;
+      height: 20px;
+      background: var(--bg-color-primary);
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--text-color-primary);
+      z-index: 1;
+    }
+
+    &__image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &__loading {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        var(--bg-color-tertiary) 25%,
+        var(--bg-color-secondary) 50%,
+        var(--bg-color-tertiary) 75%
+      );
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    &__empty {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-color-secondary);
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  &__footer {
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border-color);
+  }
+
+  &__start-button {
+    width: 100%;
+    padding: var(--space-3);
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--color-primary-hover);
+    }
+  }
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

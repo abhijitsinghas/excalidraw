@@ -62,6 +62,8 @@ import { ImageExportDialog } from "./ImageExportDialog";
 import { Island } from "./Island";
 import { JSONExportDialog } from "./JSONExportDialog";
 import { LaserPointerButton } from "./LaserPointerButton";
+import { PresentationMode } from "./PresentationMode/PresentationMode";
+import { SlidesExportDialog } from "./SlidesExportDialog/SlidesExportDialog";
 
 import "./LayerUI.scss";
 import "./Toolbar.scss";
@@ -224,6 +226,14 @@ const LayerUI = ({
         name={app.getName()}
       />
     );
+  };
+
+  const renderSlidesExportDialog = () => {
+    if (appState.openDialog?.name !== "slidesExport") {
+      return null;
+    }
+
+    return <SlidesExportDialog />;
   };
 
   const renderCanvasActions = () => (
@@ -565,6 +575,8 @@ const LayerUI = ({
       <tunnels.OverwriteConfirmDialogTunnel.Out />
       {renderImageExportDialog()}
       {renderJSONExportDialog()}
+      {renderSlidesExportDialog()}
+      <PresentationMode />
       {appState.pasteDialog.shown && (
         <PasteChartDialog
           setAppState={setAppState}

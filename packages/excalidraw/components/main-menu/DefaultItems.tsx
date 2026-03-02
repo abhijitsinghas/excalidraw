@@ -135,6 +135,21 @@ export const SaveAsImage = () => {
 };
 SaveAsImage.displayName = "SaveAsImage";
 
+export const ExportSlides = () => {
+  const setAppState = useExcalidrawSetAppState();
+  const { t } = useI18n();
+  return (
+    <DropdownMenuItem
+      icon={ExportIcon}
+      data-testid="slides-export-button"
+      onSelect={() => setAppState({ openDialog: { name: "slidesExport" } })}
+    >
+      {t("presentation.exportSlides")}
+    </DropdownMenuItem>
+  );
+};
+ExportSlides.displayName = "ExportSlides";
+
 export const CommandPalette = (opts?: { className?: string }) => {
   const setAppState = useExcalidrawSetAppState();
   const { t } = useI18n();
