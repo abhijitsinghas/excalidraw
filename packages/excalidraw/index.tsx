@@ -320,6 +320,23 @@ export { setCustomTextMetricsProvider } from "@excalidraw/element";
 
 export { CommandPalette } from "./components/CommandPalette/CommandPalette";
 
+export { PresentationSidebar } from "./components/PresentationSidebar/PresentationSidebar";
+export type { PresentationSidebarProps } from "./components/PresentationSidebar/PresentationSidebar";
+
+export { PresentationModeView } from "./components/PresentationMode/PresentationModeView";
+export type { PresentationModeViewProps } from "./components/PresentationMode/PresentationModeView";
+
+export { ExportDialog } from "./components/ExportDialog/ExportDialog";
+export type { ExportSettings } from "./components/ExportDialog/types";
+
+export { usePresentationSlides } from "./hooks/usePresentationSlides";
+export type {
+  PresentationSlide,
+  UsePresentationSlidesReturn,
+} from "./hooks/usePresentationSlides";
+
+export { exportPresentation } from "./utils/exportPresentation";
+
 export {
   renderSpreadsheet,
   tryParseSpreadsheet,

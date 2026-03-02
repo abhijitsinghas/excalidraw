@@ -1,15 +1,37 @@
-import { DefaultSidebar, Sidebar, THEME } from "@excalidraw/excalidraw";
+import {
+  DefaultSidebar,
+  Sidebar,
+  THEME,
+  PresentationSidebar,
+} from "@excalidraw/excalidraw";
 import {
   messageCircleIcon,
   presentationIcon,
 } from "@excalidraw/excalidraw/components/icons";
 import { LinkButton } from "@excalidraw/excalidraw/components/LinkButton";
 import { useUIAppState } from "@excalidraw/excalidraw/context/ui-appState";
+import type { PresentationSlide } from "@excalidraw/excalidraw";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
 import "./AppSidebar.scss";
 
-export const AppSidebar = () => {
+export interface AppSidebarProps {
+  excalidrawAPI?: ExcalidrawImperativeAPI | null;
+  presentationSlides?: PresentationSlide[];
+  onStartPresentation?: () => void;
+  onExportClick?: () => void;
+  onZoomToFrame?: (frameId: string) => void;
+}
+
+export const AppSidebar: React.FC<AppSidebarProps> = ({
+  excalidrawAPI,
+  presentationSlides = [],
+  onStartPresentation,
+  onExportClick,
+  onZoomToFrame,
+}) => {
   const { theme, openSidebar } = useUIAppState();
+  const hasFrames = presentationSlides && presentationSlides.length > 0;
 
   return (
     <DefaultSidebar>
@@ -51,28 +73,40 @@ export const AppSidebar = () => {
         </div>
       </Sidebar.Tab>
       <Sidebar.Tab tab="presentation" className="px-3">
-        <div className="app-sidebar-promo-container">
-          <div
-            className="app-sidebar-promo-image"
-            style={{
-              ["--image-source" as any]: `url(/oss_promo_presentations_${
-                theme === THEME.DARK ? "dark" : "light"
-              }.svg)`,
-              backgroundSize: "60%",
-              opacity: 0.4,
-            }}
+        {hasFrames && excalidrawAPI ? (
+          <PresentationSidebar
+            appState={excalidrawAPI.getAppState()}
+            elements={excalidrawAPI.getSceneElements()}
+            binaryFiles={excalidrawAPI.getFiles()}
+            onStartPresentation={onStartPresentation || (() => {})}
+            onExportClick={onExportClick || (() => {})}
+            onZoomToFrame={onZoomToFrame || (() => {})}
+            isOpen={openSidebar?.tab === "presentation"}
           />
-          <div className="app-sidebar-promo-text">
-            Create presentations with Excalidraw+
+        ) : (
+          <div className="app-sidebar-promo-container">
+            <div
+              className="app-sidebar-promo-image"
+              style={{
+                ["--image-source" as any]: `url(/oss_promo_presentations_${
+                  theme === THEME.DARK ? "dark" : "light"
+                }.svg)`,
+                backgroundSize: "60%",
+                opacity: 0.4,
+              }}
+            />
+            <div className="app-sidebar-promo-text">
+              Create presentations with Excalidraw+
+            </div>
+            <LinkButton
+              href={`${
+                import.meta.env.VITE_APP_PLUS_LP
+              }/plus?utm_source=excalidraw&utm_medium=app&utm_content=presentations_promo#excalidraw-redirect`}
+            >
+              Sign up now
+            </LinkButton>
           </div>
-          <LinkButton
-            href={`${
-              import.meta.env.VITE_APP_PLUS_LP
-            }/plus?utm_source=excalidraw&utm_medium=app&utm_content=presentations_promo#excalidraw-redirect`}
-          >
-            Sign up now
-          </LinkButton>
-        </div>
+        )}
       </Sidebar.Tab>
     </DefaultSidebar>
   );

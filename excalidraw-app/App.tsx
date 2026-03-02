@@ -5,6 +5,12 @@ import {
   CaptureUpdateAction,
   reconcileElements,
   useEditorInterface,
+  PresentationModeView,
+  ExportDialog,
+  usePresentationSlides,
+  exportPresentation,
+  type PresentationSlide,
+  type ExportSettings,
 } from "@excalidraw/excalidraw";
 import { trackEvent } from "@excalidraw/excalidraw/analytics";
 import { getDefaultAppState } from "@excalidraw/excalidraw/appState";
@@ -418,6 +424,16 @@ const ExcalidrawWrapper = () => {
 
   const [, forceRefresh] = useState(false);
 
+  // Presentation mode state
+  const [isInPresentationMode, setIsInPresentationMode] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [presentationSlideIndex, setPresentationSlideIndex] = useState(0);
+
+  // Get presentation slides from elements
+  const presentationSlidesHook = usePresentationSlides(
+    excalidrawAPI?.getSceneElements() || [],
+  );
+
   useEffect(() => {
     if (isDevEnv()) {
       const debugState = loadSavedDebugState();
@@ -773,6 +789,126 @@ const ExcalidrawWrapper = () => {
     [setShareDialogState],
   );
 
+  // Presentation mode handlers
+  const handleStartPresentation = useCallback(() => {
+    setIsInPresentationMode(true);
+    setPresentationSlideIndex(0);
+  }, []);
+
+  const handleExitPresentation = useCallback(() => {
+    setIsInPresentationMode(false);
+  }, []);
+
+  const handleExportClick = useCallback(() => {
+    setShowExportDialog(true);
+  }, []);
+
+  const handleRenderSlideFrame = useCallback(
+    async (frameId: string, canvasContext: CanvasRenderingContext2D) => {
+      if (!excalidrawAPI) {
+        return;
+      }
+
+      // Get the frame element
+      const elements = excalidrawAPI.getSceneElements();
+      const frameElement = elements.find((el) => el.id === frameId);
+
+      if (!frameElement) {
+        return;
+      }
+
+      // Zoom to the frame bounds
+      const { x, y, width, height } = frameElement;
+      const canvas = canvasContext.canvas;
+
+      // Calculate zoom to fit the frame
+      const scaleX = canvas.width / (width + 20);
+      const scaleY = canvas.height / (height + 20);
+      const zoom = Math.min(scaleX, scaleY, 1);
+
+      // Save canvas state
+      canvasContext.save();
+
+      // Translate to center
+      canvasContext.translate(canvas.width / 2, canvas.height / 2);
+      canvasContext.scale(zoom, zoom);
+      canvasContext.translate(-x - width / 2, -y - height / 2);
+
+      // Render via Excalidraw's internal rendering
+      // This is a placeholder - actual rendering would use Excalidraw's renderer
+      excalidrawAPI.refresh();
+
+      // Restore canvas state
+      canvasContext.restore();
+    },
+    [excalidrawAPI],
+  );
+
+  const handleExport = useCallback(
+    async (slides: PresentationSlide[], settings: ExportSettings) => {
+      // Create a canvas for rendering slides
+      const renderSlideToCanvas = async (slide: PresentationSlide) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1920;
+        canvas.height = 1440;
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+          throw new Error("Could not get canvas context");
+        }
+
+        // Clear with white background
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Render the slide frame
+        await handleRenderSlideFrame(slide.id, ctx);
+
+        return canvas;
+      };
+
+      try {
+        const blob = await exportPresentation(
+          slides,
+          settings,
+          renderSlideToCanvas,
+        );
+
+        // Download the file
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const extension = settings.format === "pdf" ? "pdf" : "pptx";
+        const timestamp = new Date().toISOString().split("T")[0];
+        link.href = url;
+        link.download = `Presentation-${timestamp}.${extension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Show success message
+        excalidrawAPI?.updateScene({
+          appState: {
+            toast: {
+              message: `Presentation exported as ${extension.toUpperCase()}`,
+            },
+          },
+        });
+      } catch (error) {
+        console.error("Export failed:", error);
+        excalidrawAPI?.updateScene({
+          appState: {
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : "Export failed. Please try again.",
+          },
+        });
+      }
+    },
+    [excalidrawAPI, handleRenderSlideFrame],
+  );
+
   // browsers generally prevent infinite self-embedding, there are
   // cases where it still happens, and while we disallow self-embedding
   // by not whitelisting our own origin, this serves as an additional guard
@@ -987,7 +1123,23 @@ const ExcalidrawWrapper = () => {
           }}
         />
 
-        <AppSidebar />
+        <AppSidebar
+          excalidrawAPI={excalidrawAPI}
+          presentationSlides={presentationSlidesHook.slides}
+          onStartPresentation={handleStartPresentation}
+          onExportClick={handleExportClick}
+          onZoomToFrame={(frameId: string) => {
+            if (excalidrawAPI) {
+              const elements = excalidrawAPI.getSceneElements();
+              const frameElement = elements.find((el) => el.id === frameId);
+              if (frameElement) {
+                excalidrawAPI.scrollToContent(frameElement, {
+                  animate: true,
+                });
+              }
+            }
+          }}
+        />
 
         {errorMessage && (
           <ErrorDialog onClose={() => setErrorMessage("")}>
@@ -1189,6 +1341,30 @@ const ExcalidrawWrapper = () => {
             appState={excalidrawAPI.getAppState()}
             scale={window.devicePixelRatio}
             ref={debugCanvasRef}
+          />
+        )}
+
+        {/* Presentation Mode View */}
+        {isInPresentationMode &&
+          excalidrawAPI &&
+          presentationSlidesHook.slides.length > 0 && (
+            <PresentationModeView
+              slides={presentationSlidesHook.slides}
+              appState={excalidrawAPI.getAppState()}
+              elements={excalidrawAPI.getSceneElements()}
+              binaryFiles={excalidrawAPI.getFiles()}
+              onExit={handleExitPresentation}
+              onSlideChange={setPresentationSlideIndex}
+              onRenderSlide={handleRenderSlideFrame}
+            />
+          )}
+
+        {/* Export Dialog */}
+        {showExportDialog && presentationSlidesHook.slides.length > 0 && (
+          <ExportDialog
+            slides={presentationSlidesHook.slides}
+            onClose={() => setShowExportDialog(false)}
+            onExport={handleExport}
           />
         )}
       </Excalidraw>
