@@ -57,6 +57,7 @@ import { FixedSideContainer } from "./FixedSideContainer";
 import { HelpDialog } from "./HelpDialog";
 import { HintViewer } from "./HintViewer";
 import { ImageExportDialog } from "./ImageExportDialog";
+import { ExportFrameDialog } from "./ExportFrameDialog";
 import { Island } from "./Island";
 import { JSONExportDialog } from "./JSONExportDialog";
 import { LaserPointerButton } from "./LaserPointerButton";
@@ -224,6 +225,20 @@ const LayerUI = ({
     );
   };
 
+  const renderExportFrameDialog = () => {
+    if (appState.openDialog?.name !== "frameExport") {
+      return null;
+    }
+
+    return (
+      <ExportFrameDialog
+        elements={elements}
+        appState={appState}
+        files={files}
+        onCloseRequest={() => setAppState({ openDialog: null })}
+      />
+    );
+  };
   const renderCanvasActions = () => (
     <div style={{ position: "relative" }}>
       {/* wrapping to Fragment stops React from occasionally complaining
@@ -434,18 +449,20 @@ const LayerUI = ({
 
   const renderSidebars = () => {
     return (
-      <DefaultSidebar
-        __fallback
-        onDock={(docked) => {
-          trackEvent(
-            "sidebar",
-            `toggleDock (${docked ? "dock" : "undock"})`,
-            `(${
-              editorInterface.formFactor === "phone" ? "mobile" : "desktop"
-            })`,
-          );
-        }}
-      />
+      <>
+        <DefaultSidebar
+          __fallback
+          onDock={(docked) => {
+            trackEvent(
+              "sidebar",
+              `toggleDock (${docked ? "dock" : "undock"})`,
+              `(${
+                editorInterface.formFactor === "phone" ? "mobile" : "desktop"
+              })`,
+            );
+          }}
+        />
+      </>
     );
   };
 
@@ -554,6 +571,7 @@ const LayerUI = ({
         />
       )}
       <tunnels.OverwriteConfirmDialogTunnel.Out />
+      {renderExportFrameDialog()}
       {renderImageExportDialog()}
       {renderJSONExportDialog()}
       {appState.openDialog?.name === "charts" && (

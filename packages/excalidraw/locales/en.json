@@ -267,7 +267,8 @@
     "removeItemsFromsLibrary": "Delete {{count}} item(s) from library?",
     "invalidEncryptionKey": "Encryption key must be of 22 characters. Live collaboration is disabled.",
     "collabOfflineWarning": "No internet connection available.\nYour changes will not be saved!",
-    "localStorageQuotaExceeded": "Browser storage quota exceeded. Changes will not be saved."
+    "localStorageQuotaExceeded": "Browser storage quota exceeded. Changes will not be saved.",
+    "noFramesFound": "No frames found to export"
   },
   "errors": {
     "unsupportedFileType": "Unsupported file type.",
@@ -664,7 +665,7 @@
       "mermaidParseError": "Mermaid syntax error"
     },
     "rateLimit": {
-      "messageLimit": "You've hit your AI limit on the free plan. Try out Excalidraw+ for more or come back tomorrow.",
+      "messageLimit": "You've hit your AI limit for today. Please come back tomorrow.",
       "generalRateLimit": "Hold your horses, you're too fast for us! Please wait a moment before trying again.",
       "messageLimitInputPlaceholder": "You've reached your message limit"
     },

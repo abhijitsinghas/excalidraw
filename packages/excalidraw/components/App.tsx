@@ -336,7 +336,6 @@ import { actionTextAutoResize } from "../actions/actionTextAutoResize";
 import { actionToggleViewMode } from "../actions/actionToggleViewMode";
 import { ActionManager } from "../actions/manager";
 import { actions } from "../actions/register";
-import { getShortcutFromShortcutName } from "../actions/shortcuts";
 import { trackEvent } from "../analytics";
 import { AnimationFrameHandler } from "../animation-frame-handler";
 import {
@@ -452,6 +451,7 @@ import { Toast } from "./Toast";
 import { findShapeByKey } from "./shapes";
 
 import UnlockPopup from "./UnlockPopup";
+import PresentationMode from "./PresentationMode";
 
 import type { ExcalidrawLibraryIds } from "../data/types";
 
@@ -638,6 +638,7 @@ class App extends React.Component<AppProps, AppState> {
   };
 
   private elementsPendingErasure: ElementsPendingErasure = new Set();
+  private presentationModeEnabled: boolean = false;
 
   public flowChartCreator: FlowChartCreator = new FlowChartCreator();
   private flowChartNavigator: FlowChartNavigator = new FlowChartNavigator();
@@ -658,6 +659,7 @@ class App extends React.Component<AppProps, AppState> {
   animationFrameHandler = new AnimationFrameHandler();
 
   laserTrails = new LaserTrails(this.animationFrameHandler, this);
+  presentationLaserTrails = new LaserTrails(this.animationFrameHandler, this);
   eraserTrail = new EraserTrail(this.animationFrameHandler, this);
   lassoTrail = new LassoTrail(this.animationFrameHandler, this);
 
@@ -2308,6 +2310,43 @@ class App extends React.Component<AppProps, AppState> {
                         )}
                       </ExcalidrawActionManagerContext.Provider>
                       {this.renderEmbeddables()}
+                      {this.presentationModeEnabled && (
+                        <PresentationMode
+                          frames={this.scene.getNonDeletedFramesLikes()}
+                          elements={this.scene.getNonDeletedElements()}
+                          appState={this.state}
+                          files={this.files}
+                          app={this}
+                          onClose={(currentFrameId) => {
+                            // Select and zoom to the slide we exited from
+                            if (currentFrameId) {
+                              const frame =
+                                this.scene.getElementsFromId(currentFrameId);
+                              if (frame?.length) {
+                                // Use requestAnimationFrame to ensure DOM has updated after presentation mode exits
+                                requestAnimationFrame(() => {
+                                  requestAnimationFrame(() => {
+                                    this.scrollToContent(frame[0], {
+                                      animate: true,
+                                      fitToViewport: true,
+                                      viewportZoomFactor: 1,
+                                      canvasOffsets: this.getEditorUIOffsets(),
+                                    });
+                                    // Select the frame (like clicking on a slide in sidebar)
+                                    this.setState({
+                                      selectedElementIds: {
+                                        [currentFrameId]: true,
+                                      },
+                                    });
+                                  });
+                                });
+                              }
+                            }
+                            this.presentationModeEnabled = false;
+                            this.triggerRender(true);
+                          }}
+                        />
+                      )}
                     </ExcalidrawElementsContext.Provider>
                   </ExcalidrawAppStateContext.Provider>
                 </ExcalidrawSetAppStateContext.Provider>
@@ -4097,6 +4136,46 @@ class App extends React.Component<AppProps, AppState> {
     });
   };
 
+  startPresentation = () => {
+    const frames = this.scene.getNonDeletedFramesLikes();
+    if (frames.length === 0) {
+      this.setToast({
+        message:
+          "No frames found. Add frames to your canvas to create presentation slides.",
+        closable: true,
+        duration: 5000,
+      });
+      return;
+    }
+
+    trackEvent(
+      "toolbar",
+      "presentationMode",
+      `${this.editorInterface.formFactor === "phone" ? "mobile" : "desktop"}`,
+    );
+
+    this.presentationModeEnabled = !this.presentationModeEnabled;
+    this.triggerRender(true);
+  };
+
+  togglePresentationMode = () => {
+    if (this.presentationModeEnabled) {
+      this.startPresentation();
+    } else {
+      const isPresentationSidebarOpen =
+        this.state.openSidebar?.name === "presentation";
+
+      // Use the last opened sidebar tab, or default to presentation tab
+      const sidebarTab = this.state.lastSidebarTab;
+
+      this.setAppState({
+        openSidebar: isPresentationSidebarOpen
+          ? null
+          : { name: "presentation", tab: sidebarTab },
+      });
+    }
+  };
+
   updateFrameRendering = (
     opts:
       | Partial<AppState["frameRendering"]>
@@ -4533,9 +4612,11 @@ class App extends React.Component<AppProps, AppState> {
       this.excalidrawContainerRef?.current
         ?.querySelector(".App-toolbar")
         ?.getBoundingClientRect()?.bottom ?? 0;
-    const sidebarRect = this.excalidrawContainerRef?.current
-      ?.querySelector(".sidebar")
-      ?.getBoundingClientRect();
+    // Query for both .sidebar and .sidebar--docked to ensure we get the correct element
+    const sidebarElement =
+      this.excalidrawContainerRef?.current?.querySelector(".sidebar--docked") ||
+      this.excalidrawContainerRef?.current?.querySelector(".sidebar");
+    const sidebarRect = sidebarElement?.getBoundingClientRect();
     const propertiesPanelRect = this.excalidrawContainerRef?.current
       ?.querySelector(".App-menu__left")
       ?.getBoundingClientRect();
@@ -4775,12 +4856,8 @@ class App extends React.Component<AppProps, AppState> {
         !event.shiftKey &&
         !event.altKey
       ) {
-        this.setToast({
-          message: t("commandPalette.shortcutHint", {
-            shortcut: getShortcutFromShortcutName("commandPalette"),
-          }),
-        });
         event.preventDefault();
+        this.togglePresentationMode();
         return;
       }
 

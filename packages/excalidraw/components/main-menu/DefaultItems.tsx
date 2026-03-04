@@ -553,4 +553,22 @@ Preferences.ToggleZenMode = PreferencesToggleZenModeItem;
 Preferences.ToggleViewMode = PreferencesToggleViewModeItem;
 Preferences.ToggleElementProperties = PreferencesToggleElementPropertiesItem;
 
+export const ExportToFrame = () => {
+  const setAppState = useExcalidrawSetAppState();
+
+  return (
+    <DropdownMenuItem
+      icon={ExportIcon}
+      onSelect={() => {
+        setAppState({ openDialog: { name: "frameExport" } });
+      }}
+      data-testid="frame-export-button"
+      aria-label="Export frames"
+    >
+      Export frames
+    </DropdownMenuItem>
+  );
+};
+ExportToFrame.displayName = "ExportToFrame";
+
 Preferences.displayName = "Preferences";

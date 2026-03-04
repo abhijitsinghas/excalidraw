@@ -10,6 +10,7 @@ import {
   STATS_PANELS,
   THEME,
   DEFAULT_GRID_STEP,
+  LIBRARY_SIDEBAR_TAB,
   isTestEnv,
 } from "@excalidraw/common";
 
@@ -71,6 +72,7 @@ export const getDefaultAppState = (): Omit<
     gridModeEnabled: false,
     isBindingEnabled: true,
     defaultSidebarDockedPreference: false,
+    lastSidebarTab: LIBRARY_SIDEBAR_TAB,
     isLoading: false,
     isResizing: false,
     isRotating: false,
@@ -126,6 +128,7 @@ export const getDefaultAppState = (): Omit<
     lockedMultiSelections: {},
     activeLockedId: null,
     bindMode: "orbit",
+    presentationSlideOrder: null,
   };
 };
 
@@ -196,6 +199,7 @@ const APP_STATE_STORAGE_CONF = (<
     export: false,
     server: false,
   },
+  lastSidebarTab: { browser: true, export: false, server: false },
   isLoading: { browser: false, export: false, server: false },
   isResizing: { browser: false, export: false, server: false },
   isRotating: { browser: false, export: false, server: false },
@@ -250,6 +254,7 @@ const APP_STATE_STORAGE_CONF = (<
   lockedMultiSelections: { browser: true, export: true, server: true },
   activeLockedId: { browser: false, export: false, server: false },
   bindMode: { browser: true, export: false, server: false },
+  presentationSlideOrder: { browser: true, export: true, server: true },
 });
 
 const _clearAppStateForStorage = <

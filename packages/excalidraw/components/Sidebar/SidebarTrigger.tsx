@@ -1,5 +1,10 @@
 import clsx from "clsx";
 
+import {
+  LIBRARY_SIDEBAR_TAB,
+  PRESENTATION_SIDEBAR_TAB,
+} from "@excalidraw/common";
+
 import { useUIAppState } from "../../context/ui-appState";
 import { useExcalidrawSetAppState } from "../App";
 
@@ -30,6 +35,13 @@ export const SidebarTrigger = ({
             .querySelector(".layer-ui__wrapper")
             ?.classList.remove("animate");
           const isOpen = event.target.checked;
+
+          // Track the last opened sidebar tab
+          const sidebarTabs = [LIBRARY_SIDEBAR_TAB, PRESENTATION_SIDEBAR_TAB];
+          if (isOpen && tab && sidebarTabs.includes(tab)) {
+            setAppState({ lastSidebarTab: tab });
+          }
+
           setAppState({
             openSidebar: isOpen ? { name, tab } : null,
             openMenu: null,

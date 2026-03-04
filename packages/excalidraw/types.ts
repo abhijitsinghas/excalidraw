@@ -378,7 +378,7 @@ export interface AppState {
   openSidebar: { name: SidebarName; tab?: SidebarTabName } | null;
   openDialog:
     | null
-    | { name: "imageExport" | "help" | "jsonExport" }
+    | { name: "imageExport" | "help" | "jsonExport" | "frameExport" }
     | { name: "ttd"; tab: "text-to-diagram" | "mermaid" }
     | { name: "commandPalette" }
     | { name: "settings" }
@@ -392,6 +392,12 @@ export interface AppState {
    * a DefaultSidebar prop, which is not reflected back to the appState.
    */
   defaultSidebarDockedPreference: boolean;
+
+  /**
+   * Tracks the last opened sidebar tab (library, presentation, or search)
+   * to restore the sidebar to the last used tab when opening.
+   */
+  lastSidebarTab: SidebarTabName;
 
   lastPointerDownWith: PointerType;
   selectedElementIds: Readonly<{ [id: string]: true }>;
@@ -456,6 +462,11 @@ export interface AppState {
   // and also remove groupId from this map
   lockedMultiSelections: { [groupId: string]: true };
   bindMode: BindMode;
+  /**
+   * The order of the slides (frames) in the presentation mode.
+   * If null, the order is based on the frames' position on the canvas.
+   */
+  presentationSlideOrder: string[] | null;
 }
 
 export type SearchMatch = {
@@ -708,6 +719,8 @@ export type AppProps = Merge<
 /** A subset of App class properties that we need to use elsewhere
  * in the app, eg Manager. Factored out into a separate type to keep DRY. */
 export type AppClassProperties = {
+  startPresentation: () => void;
+  // togglePresentationMode: () => void; // Already defined below or inherited?
   props: AppProps;
   state: AppState;
   interactiveCanvas: HTMLCanvasElement | null;
@@ -757,6 +770,10 @@ export type AppClassProperties = {
 
   lastPointerMoveCoords: App["lastPointerMoveCoords"];
   bindModeHandler: App["bindModeHandler"];
+  togglePresentationMode: App["togglePresentationMode"];
+  laserTrails: App["laserTrails"];
+  presentationLaserTrails: App["presentationLaserTrails"];
+  setAppState: App["setAppState"];
 };
 
 export type PointerDownState = Readonly<{

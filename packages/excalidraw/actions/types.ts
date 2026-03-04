@@ -136,6 +136,7 @@ export type ActionName =
   | "autoResize"
   | "elementStats"
   | "searchMenu"
+  | "togglePresentationSidebar"
   | "copyElementLink"
   | "linkToElement"
   | "cropEditor"

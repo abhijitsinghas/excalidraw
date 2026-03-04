@@ -4,24 +4,29 @@ import {
   CANVAS_SEARCH_TAB,
   DEFAULT_SIDEBAR,
   LIBRARY_SIDEBAR_TAB,
+  PRESENTATION_SIDEBAR_TAB,
   composeEventHandlers,
 } from "@excalidraw/common";
 
 import type { MarkOptional, Merge } from "@excalidraw/common/utility-types";
+
+import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
 import { useTunnels } from "../context/tunnels";
 import { useUIAppState } from "../context/ui-appState";
 
 import "../components/dropdownMenu/DropdownMenu.scss";
 
-import { useExcalidrawSetAppState } from "./App";
+import { useExcalidrawSetAppState, useApp, useExcalidrawElements } from "./App";
 import { LibraryMenu } from "./LibraryMenu";
 import { SearchMenu } from "./SearchMenu";
+import { PresentationMenu } from "./PresentationMenu";
 import { Sidebar } from "./Sidebar/Sidebar";
 import { withInternalFallback } from "./hoc/withInternalFallback";
-import { LibraryIcon, searchIcon } from "./icons";
+import { LibraryIcon, searchIcon, presentationIcon } from "./icons";
 
 import type { SidebarProps, SidebarTriggerProps } from "./Sidebar/common";
+import type { AppClassProperties } from "../types";
 
 const DefaultSidebarTrigger = withInternalFallback(
   "DefaultSidebarTrigger",
@@ -30,12 +35,18 @@ const DefaultSidebarTrigger = withInternalFallback(
       React.HTMLAttributes<HTMLDivElement>,
   ) => {
     const { DefaultSidebarTriggerTunnel } = useTunnels();
+    const appState = useUIAppState();
+
+    // Use the last sidebar tab if available, otherwise default to library
+    const defaultTab = appState.lastSidebarTab || LIBRARY_SIDEBAR_TAB;
+
     return (
       <DefaultSidebarTriggerTunnel.In>
         <Sidebar.Trigger
           {...props}
           className="default-sidebar-trigger"
           name={DEFAULT_SIDEBAR.name}
+          tab={defaultTab}
         />
       </DefaultSidebarTriggerTunnel.In>
     );
@@ -67,10 +78,14 @@ export const DefaultSidebar = Object.assign(
       {
         /** pass `false` to disable docking */
         onDock?: SidebarProps["onDock"] | false;
+        app?: AppClassProperties;
+        elements?: readonly NonDeletedExcalidrawElement[];
       }
     >) => {
       const appState = useUIAppState();
       const setAppState = useExcalidrawSetAppState();
+      const app = useApp();
+      const elements = useExcalidrawElements();
 
       const { DefaultSidebarTabTriggersTunnel } = useTunnels();
 
@@ -105,6 +120,9 @@ export const DefaultSidebar = Object.assign(
                 <Sidebar.TabTrigger tab={LIBRARY_SIDEBAR_TAB}>
                   {LibraryIcon}
                 </Sidebar.TabTrigger>
+                <Sidebar.TabTrigger tab={PRESENTATION_SIDEBAR_TAB}>
+                  {presentationIcon}
+                </Sidebar.TabTrigger>
                 <DefaultSidebarTabTriggersTunnel.Out />
               </Sidebar.TabTriggers>
             </Sidebar.Header>
@@ -113,6 +131,12 @@ export const DefaultSidebar = Object.assign(
             </Sidebar.Tab>
             <Sidebar.Tab tab={CANVAS_SEARCH_TAB}>
               <SearchMenu />
+            </Sidebar.Tab>
+            <Sidebar.Tab tab={PRESENTATION_SIDEBAR_TAB}>
+              <PresentationMenu
+                app={rest.app || app}
+                elements={rest.elements || elements}
+              />
             </Sidebar.Tab>
             {children}
           </Sidebar.Tabs>
