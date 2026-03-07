@@ -31,7 +31,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onZoomToFrame,
 }) => {
   const { theme, openSidebar } = useUIAppState();
-  const hasFrames = presentationSlides && presentationSlides.length > 0;
 
   return (
     <DefaultSidebar>
@@ -73,40 +72,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
       </Sidebar.Tab>
       <Sidebar.Tab tab="presentation" className="px-3">
-        {hasFrames && excalidrawAPI ? (
-          <PresentationSidebar
-            appState={excalidrawAPI.getAppState()}
-            elements={excalidrawAPI.getSceneElements()}
-            binaryFiles={excalidrawAPI.getFiles()}
-            onStartPresentation={onStartPresentation || (() => {})}
-            onExportClick={onExportClick || (() => {})}
-            onZoomToFrame={onZoomToFrame || (() => {})}
-            isOpen={openSidebar?.tab === "presentation"}
-          />
-        ) : (
-          <div className="app-sidebar-promo-container">
-            <div
-              className="app-sidebar-promo-image"
-              style={{
-                ["--image-source" as any]: `url(/oss_promo_presentations_${
-                  theme === THEME.DARK ? "dark" : "light"
-                }.svg)`,
-                backgroundSize: "60%",
-                opacity: 0.4,
-              }}
-            />
-            <div className="app-sidebar-promo-text">
-              Create presentations with Excalidraw+
-            </div>
-            <LinkButton
-              href={`${
-                import.meta.env.VITE_APP_PLUS_LP
-              }/plus?utm_source=excalidraw&utm_medium=app&utm_content=presentations_promo#excalidraw-redirect`}
-            >
-              Sign up now
-            </LinkButton>
-          </div>
-        )}
+        <PresentationSidebar
+          appState={excalidrawAPI?.getAppState()}
+          elements={excalidrawAPI?.getSceneElements() || []}
+          binaryFiles={excalidrawAPI?.getFiles() || {}}
+          onStartPresentation={onStartPresentation || (() => {})}
+          onExportClick={onExportClick || (() => {})}
+          onZoomToFrame={onZoomToFrame || (() => {})}
+          isOpen={openSidebar?.tab === "presentation"}
+        />
       </Sidebar.Tab>
     </DefaultSidebar>
   );

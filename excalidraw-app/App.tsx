@@ -804,9 +804,9 @@ const ExcalidrawWrapper = () => {
   }, []);
 
   const handleRenderSlideFrame = useCallback(
-    async (frameId: string, canvasContext: CanvasRenderingContext2D) => {
+    async (frameId: string) => {
       if (!excalidrawAPI) {
-        return;
+        return null;
       }
 
       // Get the frame element
@@ -814,32 +814,12 @@ const ExcalidrawWrapper = () => {
       const frameElement = elements.find((el) => el.id === frameId);
 
       if (!frameElement) {
-        return;
+        return null;
       }
 
-      // Zoom to the frame bounds
-      const { x, y, width, height } = frameElement;
-      const canvas = canvasContext.canvas;
-
-      // Calculate zoom to fit the frame
-      const scaleX = canvas.width / (width + 20);
-      const scaleY = canvas.height / (height + 20);
-      const zoom = Math.min(scaleX, scaleY, 1);
-
-      // Save canvas state
-      canvasContext.save();
-
-      // Translate to center
-      canvasContext.translate(canvas.width / 2, canvas.height / 2);
-      canvasContext.scale(zoom, zoom);
-      canvasContext.translate(-x - width / 2, -y - height / 2);
-
-      // Render via Excalidraw's internal rendering
-      // This is a placeholder - actual rendering would use Excalidraw's renderer
-      excalidrawAPI.refresh();
-
-      // Restore canvas state
-      canvasContext.restore();
+      // This is now handled internally by PresentationModeView
+      // Keeping this callback for potential future use
+      return null;
     },
     [excalidrawAPI],
   );
@@ -861,8 +841,15 @@ const ExcalidrawWrapper = () => {
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Render the slide frame
-        await handleRenderSlideFrame(slide.id, ctx);
+        // Render the slide frame - for now, just show placeholder
+        ctx.fillStyle = "#000";
+        ctx.font = "48px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          slide.name || "Slide",
+          canvas.width / 2,
+          canvas.height / 2,
+        );
 
         return canvas;
       };

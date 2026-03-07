@@ -22,7 +22,7 @@ import {
 import "./PresentationSidebar.scss";
 
 export interface PresentationSidebarProps {
-  appState: AppState;
+  appState?: AppState;
   elements: readonly ExcalidrawElement[];
   binaryFiles: BinaryFiles;
   onStartPresentation: () => void;
@@ -70,7 +70,7 @@ export const PresentationSidebar: React.FC<PresentationSidebarProps> = ({
         // Generate and update thumbnail
         const url = await generateFrameThumbnail(
           slide.frameElement,
-          appState,
+          appState ?? null,
           elements as ExcalidrawElement[],
           THUMBNAIL_WIDTH,
           THUMBNAIL_HEIGHT,

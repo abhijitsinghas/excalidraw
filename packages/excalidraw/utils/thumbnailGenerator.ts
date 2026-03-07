@@ -16,7 +16,7 @@ const DEFAULT_THUMBNAIL_HEIGHT = 150;
  * Generates a thumbnail image (data URL) for a frame element.
  *
  * @param frameElement - The frame element to generate a thumbnail for
- * @param appState - Current application state
+ * @param appState - Current application state (optional, will use defaults if not provided)
  * @param allElements - All elements in the scene
  * @param width - Thumbnail width in pixels (default: 200)
  * @param height - Thumbnail height in pixels (default: 150)
@@ -25,7 +25,7 @@ const DEFAULT_THUMBNAIL_HEIGHT = 150;
  */
 export const generateFrameThumbnail = async (
   frameElement: ExcalidrawFrameLikeElement,
-  appState: AppState,
+  appState: AppState | null | undefined,
   allElements: readonly ExcalidrawElement[],
   width: number = DEFAULT_THUMBNAIL_WIDTH,
   height: number = DEFAULT_THUMBNAIL_HEIGHT,
@@ -65,23 +65,27 @@ export const generateFrameThumbnail = async (
       }
     }
 
+    // Get theme from appState or default to light
+    const theme = appState?.theme || "light";
+    const viewBackgroundColor = appState?.viewBackgroundColor || "#ffffff";
+
     // Create a minimal appState for thumbnail rendering
     const thumbnailAppState: AppState = {
-      ...appState,
+      ...(appState || {}),
       // Disable various UI elements for cleaner thumbnails
       exportScale: canvasWidth / (frameElement.width || width),
       scrollX: 0,
       scrollY: 0,
       zoom: { value: getNormalizedZoom(1) },
-      theme: appState.theme || "light",
-      viewBackgroundColor: appState.viewBackgroundColor || "#ffffff",
+      theme,
+      viewBackgroundColor,
       frameRendering: {
         enabled: true,
         outline: false,
         name: false,
         clip: true,
       },
-    };
+    } as AppState;
 
     // Export the frame to canvas
     const canvas = await exportToCanvas(
@@ -91,7 +95,7 @@ export const generateFrameThumbnail = async (
       {
         exportBackground: true,
         exportPadding: 0,
-        viewBackgroundColor: appState.viewBackgroundColor || "#ffffff",
+        viewBackgroundColor: thumbnailAppState.viewBackgroundColor,
         exportingFrame: frameElement,
       },
       // Custom canvas creator to ensure correct size
